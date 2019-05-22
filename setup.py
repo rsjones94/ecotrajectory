@@ -10,7 +10,7 @@ setup(
   author = 'Sky Jones',
   author_email = 'rsajones94@gmail.com',
   url = 'https://github.com/rsjones94',
-  download_url = 'https://github.com/rsjones94/pyfluv/archive/***HERE***',
+  download_url = 'https://github.com/rsjones94/ecotrajectory/archive/v0.1.0.tar.gz',
   keywords = [
               'ecology', 'evolution', 'drift', 'genetic', 'algorithm',
               'simulation'
