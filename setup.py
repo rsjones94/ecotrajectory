@@ -12,14 +12,13 @@ setup(
   url = 'https://github.com/rsjones94',
   download_url = 'https://github.com/rsjones94/pyfluv/archive/***HERE***',
   keywords = [
-              'ecology', 'evolution', 'drift', 'genetic', 'algorithm'
+              'ecology', 'evolution', 'drift', 'genetic', 'algorithm',
+              'simulation'
               ],
   install_requires=[
           'numpy',
-          'matplotlib',
-          'scipy',
-          'pandas',
-          'sklearn'
+          'matplotlib'
+          'pandas'
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
