@@ -5,26 +5,27 @@ Classes to make the "gameboard" that the simulation will run on.
 import numpy as np
 
 
-class GameBoard():
+class Gameboard():
 
     """
     A raster-like board composed of environmental Tiles.
 
     Attributes:
-        size(tuple): a len 2 tuple specify the x-y dimensions of the gameboard
+        boardsize(tuple): a len 2 tuple (x,y) specify the number of rows y and columns x
         tile(Environment): an Environment tile that the board will be composed of
         """
 
-    def __init__(self, size, tile):
+    def __init__(self, boardsize, tile):
         
-        self.size = size
+        self.boardsize = boardsize
         self.tile = tile
+        self.landscape = self.create_landscape()
     
     def create_landscape(self):
         
-        row = [self.tile for l in range(self.size[0])]
-        landscape = [row for l in range(self.size[1])] 
-        self.landscape = np.matrix(landscape)
+        row = [self.tile for l in range(self.boardsize[1])]
+        landscape = [row for l in range(self.boardsize[0])] 
+        return np.array(landscape)
         
 
 class Tile():
@@ -39,7 +40,8 @@ class Tile():
         organisms(:obj:'list' of :obj:'Organism'): organisms present on the tile
     """
 
-    def __init__(self, max_plant_material, plant_material, plant_growth_rate, organisms=[]):
+    def __init__(self, max_plant_material, plant_material, plant_growth_rate,
+                 organisms=[]):
         
         self.max_plant_material = max_plant_material
         self.plant_material = plant_material
