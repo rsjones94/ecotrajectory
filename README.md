@@ -8,7 +8,7 @@ A Python package for performing simple ecological simulations.
 
 
 ```
-pip install pyfluv
+pip install ecotrajectory
 ```
 
 ## Authors
