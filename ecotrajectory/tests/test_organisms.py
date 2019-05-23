@@ -43,14 +43,34 @@ def test_Creature_die(simple_creature):
     simple_creature.die()
     assert simple_creature.is_alive == False
     
-def test_Creature_grazing_raises_energy(simple_herbivore):
+def test_Herbivore_grazing_raises_energy(simple_herbivore):
     
     simple_herbivore.graze()
     assert np.isclose(simple_herbivore.energy, 55) 
     # started at 50, should be 55 (5 plant available on tile, can get up to 10 at a time)
     
-def test_Creature_grazing_depletes_plant_matter(simple_herbivore):
+def test_Herbivore_grazing_depletes_plant_matter(simple_herbivore):
     
     simple_herbivore.graze()
     plant = simple_herbivore.get_current_tile().plant_material
     assert plant == 0
+    
+def test_Creature_attack_hurts_target(simple_board):
+    # creature attack power - 10
+    # creature defense - 0.5
+    # damage should be 10*0.5 == 5
+    # creature inital vitality is 100
+    creat1 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat2 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat1.attack(creat2)
+    
+    assert np.isclose(creat2.vitality, 95)
+    
+def test_Creature_attack_drains_own_energy(simple_board):
+    # creature initial energy is 50
+    # creature efficiency is 1, attack costs 5 energy
+    creat1 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat2 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat1.attack(creat2)
+    
+    assert np.isclose(creat1.energy, 45)

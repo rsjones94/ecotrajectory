@@ -67,8 +67,13 @@ class Creature():
         
         return self.gameboard.landscape[self.location[0],
                                         self.location[1]]
-
         
+    def attack(self, target):
+        """
+        Give the target (a Creature object) a whack.
+        """
+        target.vitality -= self.attack_power*target.defense
+        self.energy -= self.efficiency*ATTACK_COST
 
 class Herbivore(Creature):
     
