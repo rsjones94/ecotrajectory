@@ -63,10 +63,17 @@ class Tile():
         """
         Grows the plants on the tile.
         """
-        
-        self.plant_material += self.plant_growth_rate
+        self.change_plant_amount(self.plant_growth_rate)
+            
+    def change_plant_amount(self, amount):
+        """
+        Alter the plant matter on the Tile
+        """
+        self.plant_material += amount
         if self.plant_material > self.max_plant_material:
             self.plant_material = self.max_plant_material
+        elif self.plant_material < 0:
+            self.plant_material = 0
         
 
 class Prarie(Tile):

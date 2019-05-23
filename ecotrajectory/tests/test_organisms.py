@@ -38,6 +38,11 @@ def test_Creature_move_costs_energy(simple_creature):
     simple_creature.move(delX=1, delY=1) # energy starts at 50, this should cost 10
     assert np.isclose(simple_creature.energy, 40)
     
+def test_Creature_overexertion_kills_self(simple_creature):
+    
+    simple_creature.change_energy(-55) # energy starts at 50
+    assert simple_creature.is_alive == False
+    
 def test_Creature_die(simple_creature):
     
     simple_creature.die()
@@ -74,3 +79,45 @@ def test_Creature_attack_drains_own_energy(simple_board):
     creat1.attack(creat2)
     
     assert np.isclose(creat1.energy, 45)
+    
+def test_Creature_deathblow_kills_target(simple_board):
+    # creature initial energy is vitality is 100
+    # two attacks of power 100, with target defense 0.5 (50% damage reduction)
+    # should kill
+    creat1 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat2 = org.Creature(location=(2,2), gameboard=simple_board)
+    creat1.attack_power = 100
+    creat1.attack(creat2)
+    assert creat2.is_alive == True
+    creat1.attack(creat2)
+    assert creat2.is_alive == False
+    
+def test_Creature_power_vals():
+    
+    creat = org.Creature(location=None, gameboard=None)
+    expected = [100, 100, 10, 0.5, 1, 1, 0.8]
+    
+    assert creat.power_vals() == expected
+    
+def test_Creature_power_score():
+    
+    creat = org.Creature(location=None, gameboard=None)
+    expected = (3.1333333333333337, 0.4476190476190477)
+    
+    assert np.allclose(creat.power_score(), expected)
+
+def test_Creature_angle_to_location_straight_up(simple_creature):
+    
+    assert np.isclose(simple_creature.angle_to_location((2,3)), np.pi/2)
+    
+def test_Creature_angle_to_location_right(simple_creature):
+    
+    assert np.isclose(simple_creature.angle_to_location((3,2)), 0)
+    
+def test_Creature_angle_to_location_right_and_up(simple_creature):
+    
+    assert np.isclose(simple_creature.angle_to_location((3,3)), np.pi/4)
+
+def test_Creature_angle_to_location_left_and_down(simple_creature):
+    
+    assert np.isclose(simple_creature.angle_to_location((1,1)), -(3/4)*np.pi)
