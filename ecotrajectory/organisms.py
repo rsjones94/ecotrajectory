@@ -5,6 +5,35 @@ Various kinds of organisms for use in the simulation.
 import itertools
 import math
 
+import numpy as np
+
+def angle_between_points(ptA, ptB):
+    """
+    Get the angle in radians between the x-axis and the vector connecting
+    ptA and ptB
+    
+    Vectors in quadrants 1 and 2 have positive angles
+    Vectors in quadrants 3 and 4 have negative angles
+    """
+    
+    delta_x = ptB[0] - ptA[0]
+    delta_y = ptB[1] - ptA[1]
+    return math.atan2(delta_y, delta_x)
+
+def angle_diff(a1, a2):
+    """
+    Get the smallest absolute difference between two angles, taking into account
+    that angle_between_points returns negative angles for vectors in quads 3 and 4
+    """
+    
+    a = a2 - a1
+    if a > np.pi:
+        a -= 2*np.pi 
+    elif a < -np.pi:
+        a += 2*np.pi 
+    
+    return abs(a)
+
 class Creature():
     
     MOVEMENT_COST = -10
@@ -65,21 +94,32 @@ class Creature():
         else:
             raise IndexError(f'Creature cannot move to {new_pos}')
             
+    def get_closest_direction(self, loc):
+        """
+        Find the direction that is the closest to pointing right at a target
+        location.
+        
+        Returns a tuple of form (x,y) where x and y are -1, 0 or 1
+        """
+        target_angle = self.direction_to_location(loc)
+        
+        change_vals = [1,0,-1] # use these to get possible directions to go, e.g., directly right (0,1)
+        possible_directions = [l for l in
+                               itertools.product(change_vals, repeat=2)]
+        possible_directions.remove((0,0))
+        
+        angles = [angle_diff(angle_between_points((0,0),l),target_angle) 
+                  for l in possible_directions]
+        
+        return possible_directions[np.argmin(angles)]
+            
     def move_toward(self, loc):
         """
         Move the creature toward a target location, loc (x,y)
         """
         
-        target_angle = self.angle_to_location(loc)
-        
-        change_vals = [1,0,-1]
-        possible_directions = [l for l in
-                               itertools.combinations_with_replacement(change_vals, 2)]
-        possible_directions.remove((0,0))
-        
-        # UNFINISHED. Need to make function to determine angles of possible_directions
-        # and a function to evaluate how close angles are that takes into account
-        # e.g., that pi-0.1 and -pi+0.1 are rather close
+        win_direction = self.get_closest_direction(loc)
+        self.move(win_direction[0], win_direction[1])
         
     def die(self):
         
@@ -161,7 +201,7 @@ class Creature():
             
         return power_score, power_score/len(scores)
     
-    def angle_to_location(self, loc):
+    def direction_to_location(self, loc):
         """
         Get the angle in radians between the x-axis and the vector connecting
         the current location to another location, loc (x,y)
@@ -170,9 +210,7 @@ class Creature():
         Vectors in quadrants 3 and 4 have negative angles
         """
         
-        delta_x = loc[0] - self.location[0]
-        delta_y = loc[1] - self.location[1]
-        return math.atan2(delta_y, delta_x)
+        return angle_between_points(self.location, loc)
 
 class Herbivore(Creature):
     
