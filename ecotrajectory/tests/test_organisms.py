@@ -92,17 +92,17 @@ def test_Creature_deathblow_kills_target(simple_board):
     creat1.attack(creat2)
     assert creat2.is_alive == False
 
-def test_Creature_power_vals():
+def test_Creature_get_vals():
 
     creat = org.Creature(location=None, gameboard=None)
-    expected = [100, 100, 10, 0.5, 1, 1, 0.8]
+    expected = [100, 100, 10, 0.5, 0, 1, 0.8]
 
-    assert creat.power_vals() == expected
+    assert creat.get_vals(creat.power_stats()) == expected
 
 def test_Creature_power_score():
 
     creat = org.Creature(location=None, gameboard=None)
-    expected = (3.1333333333333337, 0.4476190476190477)
+    expected = (3.458333333333334, 0.4940476190476191)
 
     assert np.allclose(creat.power_score(), expected)
 
@@ -163,3 +163,16 @@ def test_Creature_move_toward(simple_creature):
 
     simple_creature.move_toward((1,3))
     assert simple_creature.location == (3,2)
+    
+def test_Creature_move_randomly_raises_exception_when_no_valid_moves(simple_creature):
+    
+    simple_creature.location = (20,20) # out of bounds: any movement will throw error
+    with pytest.raises(IndexError) as e_info:
+        e = simple_creature.move_randomly()
+    
+def test_Creature_move_randomly_finds_path(simple_creature):
+    for i in range(20):
+        # test this 20 times to make sure it *probably* won't throw an error
+        # this is a terrible testing pattern
+        simple_creature.location = (0,0)
+        simple_creature.move_randomly()

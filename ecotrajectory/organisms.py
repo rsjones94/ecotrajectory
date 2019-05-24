@@ -4,6 +4,7 @@ Various kinds of organisms for use in the simulation.
 
 import itertools
 import math
+import random
 
 import numpy as np
 
@@ -34,11 +35,24 @@ def angle_diff(a1, a2):
     
     return abs(a)
 
+def get_directions():
+    """
+    Get the 8 possible directions
+    """
+
+    change_vals = [1,0,-1]
+    possible_directions = [l for l in
+                           itertools.product(change_vals, repeat=2)]
+    possible_directions.remove((0,0))
+    return possible_directions
+
 class Creature():
     
     MOVEMENT_COST = -10
     ATTACK_COST = -5
     MATING_COST = -25
+    
+    PERFECT_STATS = [200, 100, 50, .8, .8, 3, 1]
     
     """
     An animal-esque creater to be placed on a Gameboard.
@@ -46,8 +60,7 @@ class Creature():
     Attributes:
         energy(float): the energy the creature has for tasks
         speed(int): the number of movements a creature gets per turn
-        actions(int): the number of non-movement actions a creature gets per turn
-        efficiency(float): the efficiency with which the creature performs tasks
+        efficiency(float): energy costs will multiplied by 1-efficiency
         vitality(float): the health of the creature
         attack_power(float): the power of the creature's attacks
         defense(float): the fraction of an attack against the creature that
@@ -60,9 +73,11 @@ class Creature():
         MOVEMENT_COST(float): cost to move
         ATTACK_COST(float): cost to attack
         MATING_COST(float): cost to mate
+        PERFECT_STATS(list of float): a list of ideal scores for the attributes
+            returned by power_stats
     """
     
-    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=1,
+    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
                  maxvitality=100, attack_power=10, defense=0.5, fertility=0.8,
                  aggression=0.25):
         
@@ -90,9 +105,23 @@ class Creature():
         new_pos = (self.location[0]+delX, self.location[1]+delY)
         if self.gameboard.pos_is_valid(new_pos):
             self.location = new_pos
-            self.energy += self.MOVEMENT_COST*self.efficiency
+            self.change_energy(self.MOVEMENT_COST)
         else:
             raise IndexError(f'Creature cannot move to {new_pos}')
+            
+    def move_randomly(self):
+        
+        directions = get_directions()
+        length = len(directions)
+        for i in range(length):
+            try:
+                direction = random.choice(directions)
+                self.move(direction[0], direction[1])
+                return None
+            except IndexError:
+                directions.remove(direction)
+        
+        raise IndexError('No valid movements found')
             
     def get_closest_direction(self, loc):
         """
@@ -103,10 +132,7 @@ class Creature():
         """
         target_angle = self.direction_to_location(loc)
         
-        change_vals = [1,0,-1] # use these to get possible directions to go, e.g., directly right (0,1)
-        possible_directions = [l for l in
-                               itertools.product(change_vals, repeat=2)]
-        possible_directions.remove((0,0))
+        possible_directions = get_directions()
         
         angles = [angle_diff(angle_between_points((0,0),l),target_angle) 
                   for l in possible_directions]
@@ -139,7 +165,7 @@ class Creature():
         
     def change_energy(self, amount):
         
-        self.energy += amount
+        self.energy += amount*(1-self.efficiency)
         if self.energy > self.maxenergy:
             self.energy = self.maxenergy
         elif self.energy <= 0:
@@ -155,7 +181,17 @@ class Creature():
             
     def take_damage(self, amount):
         
-        self.change_vitality(-amount*self.defense)
+        self.change_vitality(-amount*(1-self.defense))
+        
+    def mating_stats(self):
+        """
+        Returns a list of stats that can are used for mating
+        """
+        
+        stats = self.power_stats()
+        stats.append('aggression')
+        
+        return stats
         
     def power_stats(self):
         """
@@ -165,22 +201,12 @@ class Creature():
         return ['maxenergy', 'maxvitality', 'attack_power', 'defense',
                 'efficiency', 'speed', 'fertility']
         
-    def power_vals(self):
+    def get_vals(self, atts):
         """
-        Returns a list of values corresponding to the attributes returned by
-        power_stats
-        """
-        
-        return [getattr(self,l) for l in self.power_stats()]
-        
-    def perfect_stats(self):
-        """
-        Returns a list of ideal scores for the attributes returned by
-        power_stats
+        Takes a list of attributes and returns the values for them
         """
         
-        # we take the inverse of defense and efficiency as lower scores are better
-        return [200, 100, 50, 1/0.2, 1/0.2, 3, 1]
+        return [getattr(self,l) for l in atts]
         
     def power_score(self):
         """
@@ -195,7 +221,7 @@ class Creature():
         """
         
         scores = [actual/perfect for actual,perfect in
-                  zip(self.power_vals(),self.perfect_stats())]
+                  zip(self.get_vals(self.power_stats()),self.PERFECT_STATS)]
         
         power_score = sum(scores)
             
@@ -211,7 +237,18 @@ class Creature():
         """
         
         return angle_between_points(self.location, loc)
+    
+    def mate(self, target, allowMutation=False):
+        """
+        Create an offspring with another Creature
+        """
+        
+        own_vals = self.get_vals(self.mating_stats())
+        target_vals = target.get_vals(target.mating_stats())
+        offspring_vals = [(o+t)/2 for o,t in zip(own_vals,target_vals)]
 
+        val_dict = {stat:val for stat,val in zip(self.mating_stats(),offspring_vals)}
+    
 class Herbivore(Creature):
     
     feed_amount = 10
@@ -229,7 +266,7 @@ class Herbivore(Creature):
                                         gameboard=gameboard,
                                         maxenergy=100,
                                         speed=1,
-                                        efficiency=1,
+                                        efficiency=0,
                                         maxvitality=100,
                                         attack_power=0,
                                         defense=0.5,
