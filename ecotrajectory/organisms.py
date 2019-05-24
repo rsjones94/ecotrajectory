@@ -51,11 +51,24 @@ class Creature():
     MOVEMENT_COST = -10
     ATTACK_COST = -5
     MATING_COST = -25
-    
+    #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
+    #'fertility'
     PERFECT_STATS = [200, 100, 50, .8, .8, 3, 1]
+    #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
+    #'fertility', 'aggression'
+    STAT_RANGES = {'maxenergy':(0,float('inf')),
+                   'maxvitality':(0,float('inf')),
+                   'attack_power':(0,float('inf')), 
+                   'defense':(0,0.8),
+                   'efficiency':(0,0.8),
+                   'speed':(0,float('inf')),
+                   'fertility':(0,1),
+                   'aggression':(0,1)
+                  }
+    MUTATION_CHANCE = 0.01
     
     """
-    An animal-esque creater to be placed on a Gameboard.
+    An animal-esque creature to be placed on a Gameboard.
     
     Attributes:
         energy(float): the energy the creature has for tasks
@@ -75,6 +88,10 @@ class Creature():
         MATING_COST(float): cost to mate
         PERFECT_STATS(list of float): a list of ideal scores for the attributes
             returned by power_stats
+        STAT_RANGES(dict of tuples of float): min and max possible values
+            for mating attributes
+        MUTATION_CHANCE(float): the probability a mutation will occur for an attribute
+            during reproduction
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
@@ -97,6 +114,7 @@ class Creature():
         self.maxenergy = maxenergy
         self.maxvitality = maxvitality
         self.is_alive = True
+        self.movements_left = speed
         
     def move(self, delX, delY):
         """
@@ -207,6 +225,10 @@ class Creature():
         """
         
         return [getattr(self,l) for l in atts]
+    
+    def get_val_dict(self, atts):
+        
+        return {key:val for key,val in zip(atts,self.get_vals(atts))}
         
     def power_score(self):
         """
@@ -217,7 +239,8 @@ class Creature():
         Returns:
             A tuple of two numbers. The first is the absolute power score.
             The second is the relative power score (ratio of absolute score to
-            a perfect score). A 1 is a "perfect" score but not the max.
+            a perfect score). A 1 is a "perfect" score but not the max. Scores over
+            one are normalized for offspring produced by mating.
         """
         
         scores = [actual/perfect for actual,perfect in
@@ -238,9 +261,10 @@ class Creature():
         
         return angle_between_points(self.location, loc)
     
-    def mate(self, target, allowMutation=False):
+    def combine_vals(self, target):
         """
-        Create an offspring with another Creature
+        Create a dictionary that averages mating values between self and a
+        target Creature
         """
         
         own_vals = self.get_vals(self.mating_stats())
@@ -248,6 +272,75 @@ class Creature():
         offspring_vals = [(o+t)/2 for o,t in zip(own_vals,target_vals)]
 
         val_dict = {stat:val for stat,val in zip(self.mating_stats(),offspring_vals)}
+        return val_dict
+    
+    def bring_stats_in_range(self):
+        """
+        Takes all mating attributes and makes them fit into the possible ranges
+        """
+        
+        current_vals = self.get_val_dict(self.mating_stats())
+        for key in self.STAT_RANGES:
+            if current_vals[key] < self.STAT_RANGES[key][0]:
+                setattr(self, key, self.STAT_RANGES[key][0])
+            if current_vals[key] > self.STAT_RANGES[key][1]:
+                setattr(self, key, self.STAT_RANGES[key][1])
+                
+    def normalize_power_stats(self):
+        """
+        Scales the power attributes so that the normalized power_score is 1
+        """
+        
+        norm_score = self.power_score()[1]
+        if norm_score> 1:
+            for key,val in self.get_val_dict(self.power_stats()).items():
+                setattr(self, key, val/norm_score)
+                
+    def mutate_attribute(self,attr):
+        """
+        Takes an attriute and adds or takes away a random amount (scaled to
+        the possible ranges the attribute can have)
+        """
+        
+        stat_range = self.STAT_RANGES[attr]
+        if stat_range[1] == float('inf'):
+            factor = 100
+        else:
+            factor = stat_range[1] - stat_range[0]
+            
+        mutation_amount = factor*random.uniform(-1,1)
+        setattr(self, attr, getattr(self, attr)+mutation_amount)
+        
+    def reproduce(self, target):
+        """
+        Produce an offspring with another Creature
+        """
+        
+        offspring_stats = self.combine_vals(target)
+        offspring = type(self)(location=self.location,
+                               gameboard=self.gameboard,
+                               maxenergy=offspring_stats['maxenergy'],
+                               speed=offspring_stats['speed'],
+                               efficiency=offspring_stats['efficiency'],
+                               maxvitality=offspring_stats['maxvitality'],
+                               attack_power=offspring_stats['attack_power'],
+                               defense=offspring_stats['defense'],
+                               fertility=offspring_stats['fertility'],
+                               aggression=offspring_stats['aggression'])
+        
+        for key in offspring.mating_stats(): # randomly mutate attributes
+            mut_num = random.uniform(0,1)
+            if mut_num >= self.MUTATION_CHANCE:
+                offspring.mutate_attribute(key)
+                
+        offspring.normalize_power_stats() # keep offspring from getting too powerful
+        
+        return offspring
+    
+    def mate(self, target):
+        
+        if random.uniform(0,1) > (1-self.fertility) and random.uniform(0,1) > (1-target.fertility):
+            return self.reproduce(target)
     
 class Herbivore(Creature):
     

@@ -20,6 +20,12 @@ def simple_creature(simple_board):
     return org.Creature(location=(2,2), gameboard=simple_board)
 
 @pytest.fixture()
+def simple_creature_alt(simple_board):
+    
+    return org.Creature(location=(2,2), gameboard=simple_board, aggression=0.75,
+                        speed=3, attack_power=20)
+
+@pytest.fixture()
 def simple_herbivore(simple_board):
 
     return org.Herbivore(location=(2,2), gameboard=simple_board)
@@ -176,3 +182,77 @@ def test_Creature_move_randomly_finds_path(simple_creature):
         # this is a terrible testing pattern
         simple_creature.location = (0,0)
         simple_creature.move_randomly()
+        
+def test_Creature_combine_vals(simple_creature, simple_creature_alt):
+    
+    expected = {'maxenergy': 100,
+                'maxvitality': 100,
+                'attack_power': 15,
+                'defense': 0.5,
+                'efficiency': 0,
+                'speed': 2,
+                'fertility': 0.8,
+                'aggression': 0.5}
+    
+    assert simple_creature.combine_vals(simple_creature_alt) == expected
+    
+def test_Creature_bring_stats_in_range():
+    
+    creat = org.Creature(location=None, gameboard=None,
+                         maxenergy=5,
+                         maxvitality=-5,
+                         attack_power=300,
+                         defense=1.5,
+                         efficiency=0.5,
+                         speed=1,
+                         fertility=1,
+                         aggression=3)
+    
+    expected = [5,0,300,0.8,0.5,1,1,1]
+    creat.bring_stats_in_range()
+    
+    assert creat.get_vals(creat.mating_stats()) == expected
+    
+def test_Creature_normalize_power_stats():
+    
+    creat = org.Creature(None, None, maxenergy=200, maxvitality=100, attack_power=50,
+                     defense=0.8, efficiency=0.8, speed=3, fertility=1)
+    creat.normalize_power_stats()
+    assert np.isclose(creat.power_score()[1], 1)
+    
+    expected = {'maxenergy': 100,
+                'maxvitality': 100,
+                'attack_power': 15,
+                'defense': 0.5,
+                'efficiency': 0,
+                'speed': 2,
+                'fertility': 0.8
+               }
+    expected = {key:val/(8/7) for key,val in expected.items()}
+    assert creat.get_val_dict(creat.power_stats())
+    
+def test_Creature_mutate_attribute(simple_creature):
+    
+    simple_creature.mutate_attribute('maxvitality')
+    simple_creature.mutate_attribute('aggression')
+    with pytest.raises(KeyError) as e_info:
+        e = simple_creature.mutate_attribute('location')
+        
+def test_Creature_reproduce(simple_creature, simple_creature_alt):
+    
+    a = simple_creature.reproduce(simple_creature_alt)
+    
+def test_Creature_mate(simple_creature, simple_creature_alt):
+    
+    simple_creature.fertility = 1
+    simple_creature_alt.fertility = 1
+    a = simple_creature.mate(simple_creature_alt)
+    assert a is not None
+    
+    simple_creature.fertility = 1
+    simple_creature_alt.fertility = 0
+    a = simple_creature.mate(simple_creature_alt)
+    assert a is None
+    
+    
+    
