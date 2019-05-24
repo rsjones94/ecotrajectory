@@ -26,6 +26,12 @@ def simple_creature_alt(simple_board):
                         speed=3, attack_power=20)
 
 @pytest.fixture()
+def simple_creature_alt2(simple_board):
+    
+    return org.Creature(location=(2,2), gameboard=simple_board, aggression=0.75,
+                        speed=3, attack_power=25)
+
+@pytest.fixture()
 def simple_herbivore(simple_board):
 
     return org.Herbivore(location=(2,2), gameboard=simple_board)
@@ -54,15 +60,15 @@ def test_Creature_die(simple_creature):
     simple_creature.die()
     assert simple_creature.is_alive == False
 
-def test_Herbivore_grazing_raises_energy(simple_herbivore):
+def test_Herbivore_eating_raises_energy(simple_herbivore):
 
-    simple_herbivore.graze()
+    simple_herbivore.eat()
     assert np.isclose(simple_herbivore.energy, 55)
     # started at 50, should be 55 (5 plant available on tile, can get up to 10 at a time)
 
-def test_Herbivore_grazing_depletes_plant_matter(simple_herbivore):
+def test_Herbivore_eating_depletes_plant_matter(simple_herbivore):
 
-    simple_herbivore.graze()
+    simple_herbivore.eat()
     plant = simple_herbivore.get_current_tile().plant_material
     assert plant == 0
 
@@ -254,5 +260,72 @@ def test_Creature_mate(simple_creature, simple_creature_alt):
     a = simple_creature.mate(simple_creature_alt)
     assert a is None
     
+def test_Creature_decay_removes_self_from_board(simple_creature):
     
+    simple_creature.is_alive = False
+    simple_creature.energy = 5
+    simple_creature.decay()
+    
+    assert simple_creature not in simple_creature.gameboard.creatures
+    
+def test_remove_from_board(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board)
+    a.remove_from_board()
+    
+    assert simple_board.creatures == []
+    
+def test_Creature_same_species_at_loc(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board)
+    b = org.Creature(location=(2,2), gameboard=simple_board)
+    c = org.Creature(location=(2,2), gameboard=simple_board)
+    
+    friends = a.same_species_at_loc(loc=(2,2))
+    
+    assert b in friends
+    assert c in friends
+    assert a not in friends
+
+def test_Creature_try_to_mate_should_work(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5, idTag='c') # mating would not kill
+    
+    did_mate = a.try_to_mate()
+    assert did_mate == True
+    
+def test_Creature_try_to_mate_should_fail(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=10, efficiency=0.5, idTag='c') # mating would not kill
+    
+    did_mate = a.try_to_mate()
+    assert did_mate == False
+
+def test_Creature_potential_mates(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5, idTag='c') # mating would not kill
+    d = org.Creature(location=(2,3), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='d') # wrong tile
+
+    potential_mates = a.potential_mates()
+    
+    assert a not in potential_mates
+    assert b not in potential_mates
+    assert c in potential_mates
+    assert d not in potential_mates
+    
+    b.efficiency = 0.7 # efficient enough to mate with current energy
+    c.energy = 25 # right at the threshold - this mating will now kill it
+    d.location = (2,2) # onto the right indices
+
+    potential_mates = a.potential_mates()
+    
+    assert b in potential_mates
+    assert c not in potential_mates
+    assert d in potential_mates
     

@@ -50,7 +50,7 @@ class Creature():
     
     MOVEMENT_COST = -10
     ATTACK_COST = -5
-    MATING_COST = -25
+    MATING_COST = -50
     #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
     #'fertility'
     PERFECT_STATS = [200, 100, 50, .8, .8, 3, 1]
@@ -92,11 +92,13 @@ class Creature():
             for mating attributes
         MUTATION_CHANCE(float): the probability a mutation will occur for an attribute
             during reproduction
+        idTag(string or int): an optional id tag
+        generation(int): the generation of the Creature
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
                  maxvitality=100, attack_power=10, defense=0.5, fertility=0.8,
-                 aggression=0.25):
+                 aggression=0.25, idTag=None):
         
         self.energy = maxenergy/2
         self.speed = speed
@@ -106,6 +108,7 @@ class Creature():
         self.defense = defense
         self.fertility = fertility
         self.aggression = aggression
+        self.idTag = idTag
         
         self.gameboard = gameboard
         self.location = location
@@ -114,7 +117,18 @@ class Creature():
         self.maxenergy = maxenergy
         self.maxvitality = maxvitality
         self.is_alive = True
-        self.movements_left = speed
+        
+        if self.gameboard is not None:
+            self.gameboard.creatures.append(self)
+            
+        self.generation = 1
+            
+    def __str__(self):
+        
+        if self.idTag:
+            return f'Creature<{self.idTag}>'
+        else:
+            return 'Creature'
         
     def move(self, delX, delY):
         """
@@ -183,7 +197,11 @@ class Creature():
         
     def change_energy(self, amount):
         
-        self.energy += amount*(1-self.efficiency)
+        if amount < 0:
+            self.energy += amount*(1-self.efficiency)
+        else: 
+            self.energy += amount
+            
         if self.energy > self.maxenergy:
             self.energy = self.maxenergy
         elif self.energy <= 0:
@@ -326,7 +344,8 @@ class Creature():
                                attack_power=offspring_stats['attack_power'],
                                defense=offspring_stats['defense'],
                                fertility=offspring_stats['fertility'],
-                               aggression=offspring_stats['aggression'])
+                               aggression=offspring_stats['aggression'],
+                               idTag=self.idTag)
         
         for key in offspring.mating_stats(): # randomly mutate attributes
             mut_num = random.uniform(0,1)
@@ -335,12 +354,111 @@ class Creature():
                 
         offspring.normalize_power_stats() # keep offspring from getting too powerful
         
+        self.change_energy(self.MATING_COST)
+        target.change_energy(target.MATING_COST)
+        
+        offspring.generation += 1
+        
         return offspring
     
     def mate(self, target):
-        
+        """
+        Mate with another Creature, but reproduction only happens if the gods
+        allow it
+        """
         if random.uniform(0,1) > (1-self.fertility) and random.uniform(0,1) > (1-target.fertility):
             return self.reproduce(target)
+    
+    def potential_mates(self):
+        """
+        Find potential mates
+        """
+        
+        potential_mates = self.same_species_at_loc(loc=self.location)
+        for p in potential_mates:
+            print(p.energy, p.receive_mate_threshold(), p)
+        print('\n')
+        potential_mates = [l for l in potential_mates
+                           if l.energy > l.receive_mate_threshold()]
+        return potential_mates
+    
+    def try_to_mate(self):
+        """
+        Potential mates are Creatures of same species on tile with enough
+        energy to not die from mating
+        """
+        did_mate = False
+        potential_mates = self.potential_mates()
+        
+        if potential_mates:
+            target_mate = random.choice(potential_mates)
+            self.mate(target_mate)
+            did_mate = True
+        
+        return did_mate
+        
+    def rest(self):
+        
+        self.vitality += self.maxvitality/8
+        
+    def eat(self):
+        """
+        Convert something into energy
+        """
+        raise NotImplementedError('eat not implemented for Creature class')
+    
+    def inner_turn(self):
+        """
+        Internal turn logic for a Creature. Filled out in children classes
+        """
+        raise NotImplementedError('inner_turn not implemented for Creature class')
+        
+    def take_turn(self):
+        """
+        Do some stuff.
+        """
+        if not self.is_alive():
+            self.decay()
+        else:
+            self.inner_turn()
+            
+    def decay(self):
+        """
+        If you're dead, you can't do anything. Your corpse is your remaining energy.
+        If you're dead and run out of energy the corpse is deleted from the board.
+        """
+        if self.is_alive:
+            raise Exception('Creature not dead yet. Cannot decay')
+        self.energy -= 10
+        if self.energy <= 0:
+            self.remove_from_board()
+            
+    def remove_from_board(self):
+        self.gameboard.creatures.remove(self)
+            
+    def same_species_at_loc(self, loc):
+        """
+        Get a list of Creatures of the same species/type on the current tile
+        excluding self
+        """
+        all_creatures = self.gameboard.creatures_at_index(loc)
+        friends = [l for l in all_creatures if type(l) == type(self)]
+        friends.remove(self)
+        return(friends)
+        
+    def seek_mate_threshold(self):
+        """
+        The energy at which a mate will be sought
+        """
+        return self.maxenergy * 0.75
+    
+    def receive_mate_threshold(self):
+        """
+        The energy at which a mate will be recieved (energy where mating will
+        not kill the creature, though it could leave it unable to do anything
+        without dying)
+        """
+        return abs(self.MATING_COST*(1-self.efficiency))
     
 class Herbivore(Creature):
     
@@ -366,7 +484,7 @@ class Herbivore(Creature):
                                         fertility=0.8,
                                         aggression=0.0)
     
-    def graze(self):
+    def eat(self):
         """
         Munch some plants. Take the plant material and convert it 1:1 into energy.
         """
@@ -379,4 +497,18 @@ class Herbivore(Creature):
             
         self.change_energy(amt)
         target_tile.change_plant_amount(-amt)
+        
+    def inner_turn(self):
+        """
+        Do stuff
+        """
+        movement_remaining = self.speed
+        while True:
+            did_mate = False
+            if self.energy > 0.75*self.maxenergy:
+                did_mate = self.try_to_mate()
+            if not did_mate:
+                pass
+            # try to find food
+            
             

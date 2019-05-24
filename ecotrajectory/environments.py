@@ -14,6 +14,7 @@ class Gameboard():
         boardsize(tuple): a len 2 tuple (x,y) specify the number of rows y and columns x
         tile(Environment): an Environment tile that the board will be composed of
         landscape(numpy array of tile): a landscape of tiles covering the gameboard
+        creatures(list of Creatures): a list of Creature objects on the board
         """
 
     def __init__(self, boardsize, tile):
@@ -21,6 +22,7 @@ class Gameboard():
         self.boardsize = boardsize
         self.tile = tile
         self.landscape = self.create_landscape()
+        self.creatures = []
     
     def create_landscape(self):
         
@@ -40,6 +42,20 @@ class Gameboard():
             return False
         
         return True
+    
+    def add_to_board(self, target):
+        """
+        Add a creaute to the board
+        """
+        self.creatures.append(target)
+        
+    def creatures_at_index(self, index):
+        """
+        Returns all creatures currently at an index
+        """
+        
+        return [creature for creature in self.creatures
+                if creature.location == index]
         
 
 class Tile():

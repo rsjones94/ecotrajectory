@@ -5,11 +5,23 @@ Tests for environments.py using pytest
 import pytest
 
 from .. import environments as env
+from .. import organisms as org
 
 @pytest.fixture()
 def simple_board():
     
     return env.Gameboard(boardsize=(10,5), tile=env.Prarie)
+
+@pytest.fixture()
+def simple_creature(simple_board):
+
+    return org.Creature(location=(2,2), gameboard=simple_board)
+
+@pytest.fixture()
+def simple_creature_alt(simple_board):
+    
+    return org.Creature(location=(2,2), gameboard=simple_board, aggression=0.75,
+                        speed=3, attack_power=20)
 
 ### end fixtures ###
 
@@ -42,3 +54,9 @@ def test_Gameboard_pos_is_valid(simple_board):
     assert simple_board.pos_is_valid((4, 4)) == True
     assert simple_board.pos_is_valid((5, 4)) == True
     assert simple_board.pos_is_valid((4, 5)) == False
+
+def test_Gameboard_creatures_at_index(simple_board,
+                                      simple_creature,
+                                      simple_creature_alt):
+    
+    assert len(simple_board.creatures_at_index(index=(2,2))) == 2
