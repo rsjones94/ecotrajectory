@@ -2,6 +2,7 @@
 Various kinds of organisms for use in the simulation.
 """
 
+import itertools
 import math
 
 class Creature():
@@ -64,6 +65,22 @@ class Creature():
         else:
             raise IndexError(f'Creature cannot move to {new_pos}')
             
+    def move_toward(self, loc):
+        """
+        Move the creature toward a target location, loc (x,y)
+        """
+        
+        target_angle = self.angle_to_location(loc)
+        
+        change_vals = [1,0,-1]
+        possible_directions = [l for l in
+                               itertools.combinations_with_replacement(change_vals, 2)]
+        possible_directions.remove((0,0))
+        
+        # UNFINISHED. Need to make function to determine angles of possible_directions
+        # and a function to evaluate how close angles are that takes into account
+        # e.g., that pi-0.1 and -pi+0.1 are rather close
+        
     def die(self):
         
         self.is_alive = False
