@@ -21,8 +21,8 @@ logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland.log',level=lo
 the_size = (4,4)
 loc = (the_size[0]-1, the_size[1]-1)
 
-tracker = 500
-sim_length = 100000
+tracker = 100
+sim_length = 15000
 
 n_creatures = 3
 
@@ -41,7 +41,10 @@ dead = []
 avgEnergy = []
 avgSpeed = []
 avgEfficiency = []
-avgFertility = []   
+avgFertility = []
+avgAttack = []
+avgDefense = []
+avgVitality = []
 
 start = time.time()
 for i in range(sim_length):
@@ -64,10 +67,13 @@ for i in range(sim_length):
         avgSpeed.append(np.mean([c.speed for c in aliveC]))
         avgEfficiency.append(np.mean([c.efficiency for c in aliveC]))
         avgFertility.append(np.mean([c.fertility for c in aliveC]))
+        avgAttack.append(np.mean([c.attack_power for c in aliveC]))
+        avgDefense.append(np.mean([c.defense for c in aliveC]))
+        avgVitality.append(np.mean([c.maxvitality for c in aliveC]))
         
 sim_end = time.time()
 
-print(f'Simulation finished. Elapsed time: {round(end-start,2)}')
+print(f'Simulation finished. Elapsed time: {round(sim_end-sim_start,2)}')
     
 plt.figure()
 plt.plot(turn,alive)
@@ -88,3 +94,19 @@ plt.title('avgEfficiency')
 plt.figure()
 plt.plot(turn,avgFertility)
 plt.title('avgFertility')
+
+plt.figure()
+plt.plot(turn,avgSpeed)
+plt.title('avgSpeed')
+
+plt.figure()
+plt.plot(turn,avgAttack)
+plt.title('avgAttack')
+
+plt.figure()
+plt.plot(turn,avgDefense)
+plt.title('avgDefense')
+
+plt.figure()
+plt.plot(turn,avgVitality)
+plt.title('avgVitality')
