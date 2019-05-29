@@ -124,3 +124,23 @@ class Prarie(Tile):
     def __init__(self):
         super(Prarie, self).__init__(max_plant_material=25, plant_material=10,
                                      plant_growth_rate=5)
+        
+class Forest(Tile):
+    
+    """
+    A prarie Title.
+    """
+    
+    def __init__(self):
+        super(Forest, self).__init__(max_plant_material=50, plant_material=20,
+                                     plant_growth_rate=8)
+        
+class Desert(Tile):
+    
+    """
+    A prarie Title.
+    """
+    
+    def __init__(self):
+        super(Desert, self).__init__(max_plant_material=10, plant_material=5,
+                                     plant_growth_rate=2)

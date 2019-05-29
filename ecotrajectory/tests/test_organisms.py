@@ -114,7 +114,7 @@ def test_Creature_get_vals():
 def test_Creature_power_score():
 
     creat = org.Creature(location=None, gameboard=None)
-    expected = (3.458333333333334, 0.4940476190476191)
+    expected = (3.833333333333334, 0.5476190476190477)
 
     assert np.allclose(creat.power_score(), expected)
 
@@ -187,6 +187,7 @@ def test_Creature_move_randomly_finds_path(simple_creature):
         # test this 20 times to make sure it *probably* won't throw an error
         # this is a terrible testing pattern
         simple_creature.location = (0,0)
+        simple_creature.energy = 100
         simple_creature.move_randomly()
         
 def test_Creature_combine_vals(simple_creature, simple_creature_alt):
@@ -259,24 +260,6 @@ def test_Creature_mate(simple_creature, simple_creature_alt):
     simple_creature_alt.fertility = 0
     a = simple_creature.mate(simple_creature_alt)
     assert a is None
-    
-def test_Creature_decay_removes_self_from_board(simple_creature):
-    
-    simple_creature.is_alive = False
-    simple_creature.energy = 5
-    simple_creature.decay()
-    
-    assert simple_creature not in simple_creature.gameboard.creatures
-    assert simple_creature in simple_creature.gameboard.removed_creatures
-    
-def test_Creature_decays_once_dead_then_stops(simple_creature):
-    
-    simple_creature.is_alive = False
-    simple_creature.energy = 5
-    simple_creature.take_turn()
-    simple_creature.take_turn()
-    
-    assert simple_creature.energy == -5
     
 def test_remove_from_board(simple_board):
     

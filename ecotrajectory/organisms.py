@@ -49,7 +49,7 @@ def get_directions():
     possible_directions.remove((0,0))
     return possible_directions
 
-class Creature():
+class Creature:
     
     EXISTENCE_COST = -5
     MOVEMENT_COST = -5
@@ -57,7 +57,7 @@ class Creature():
     MATING_COST = -50
     #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
     #'fertility'
-    PERFECT_STATS = [200, 100, 50, .8, .8, 3, 1]
+    PERFECT_STATS = [200, 100, 50, .5, .5, 3, 1]
     #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
     #'fertility', 'aggression'
     STAT_RANGES = {'maxenergy':(0,float('inf')),
@@ -69,7 +69,7 @@ class Creature():
                    'fertility':(0,1),
                    'aggression':(0,1)
                   }
-    MUTATION_CHANCE = 0.01
+    MUTATION_CHANCE = 0.005
     MATING_THRESHHOLD = 0.75 # the % of max energy needed to initiate mating
     DECAY_AMOUNT = 10
     
@@ -103,6 +103,7 @@ class Creature():
         DECAY_AMOUNT(float): the energy reduced each turn of decay (not affected by efficiency)
         EXISTENCE_COST(float): energy reduced each turn while alive just for existing
         name(string): a randomly generated name for the creature
+        type(string): the type of creature object the instance is
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
@@ -131,6 +132,7 @@ class Creature():
             self.gameboard.creatures.append(self)
         
         self.name = generate_name()
+        self.type = 'creature'
             
             
     def __str__(self):
@@ -192,6 +194,7 @@ class Creature():
     def die(self):
         
         self.is_alive = False
+        self.remove_from_board()
         logging.info(f'{self.__str__()} has died at {self.location}!')
         
     def get_current_tile(self):
@@ -338,11 +341,11 @@ class Creature():
         
         stat_range = self.STAT_RANGES[attr]
         if stat_range[1] == float('inf'):
-            factor = 100
+            factor = 100/10
         else:
-            factor = stat_range[1] - stat_range[0]
+            factor = (stat_range[1] - stat_range[0])/10
             
-        mutation_amount = factor*random.uniform(-1,1)
+        mutation_amount = factor*np.random.normal()
         setattr(self, attr, getattr(self, attr)+mutation_amount)
         
     def reproduce(self, target):
@@ -442,10 +445,7 @@ class Creature():
         Do some stuff.
         """
         if not self.is_alive:
-            if not self.is_decayed:
-                self.decay()
-            else:
-                pass
+            pass
         else:
             self.inner_turn()
             self.change_energy(self.EXISTENCE_COST)
@@ -455,12 +455,7 @@ class Creature():
         If you're dead, you can't do anything. Your corpse is your remaining energy.
         If you're dead and run out of energy the corpse is deleted from the board.
         """
-        if self.is_alive:
-            raise Exception('Creature not dead yet. Cannot decay')
-        self.energy -= self.DECAY_AMOUNT
-        if self.energy <= 0:
-            self.remove_from_board()
-            self.is_decayed = True
+        pass
             
     def remove_from_board(self):
         self.gameboard.remove_from_board(self)
@@ -471,7 +466,7 @@ class Creature():
         excluding self
         """
         all_creatures = self.gameboard.creatures_at_index(loc)
-        friends = [l for l in all_creatures if type(l) == type(self)]
+        friends = [l for l in all_creatures if l.type == self.type]
         friends.remove(self)
         return(friends)
         
@@ -514,6 +509,7 @@ class Herbivore(Creature):
                                         defense=defense,
                                         fertility=fertility,
                                         aggression=aggression)
+        self.type = 'herbivore'
     
     def eat(self):
         """
@@ -537,7 +533,8 @@ class Herbivore(Creature):
         movement_remaining = self.speed
         while can_act:
             if not self.is_alive:
-                return
+                logging.info(f'{self.__str__()} is dead.')
+                break
             logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {self.get_current_tile().plant_material} plant.')
             did_mate = False
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
@@ -557,5 +554,7 @@ class Herbivore(Creature):
                         movement_remaining -= 1
                     else:
                         can_act = False
+                        
+        logging.info(f'{self.__str__()} ends its turn.')
             
             
