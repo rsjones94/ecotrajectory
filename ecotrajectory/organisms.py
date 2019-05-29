@@ -5,6 +5,7 @@ Various kinds of organisms for use in the simulation.
 import itertools
 import math
 import random
+import logging
 
 import numpy as np
 
@@ -48,7 +49,8 @@ def get_directions():
 
 class Creature():
     
-    MOVEMENT_COST = -10
+    EXISTENCE_COST = -5
+    MOVEMENT_COST = -5
     ATTACK_COST = -5
     MATING_COST = -50
     #'maxenergy', 'maxvitality', 'attack_power', 'defense', 'efficiency', 'speed'
@@ -99,6 +101,7 @@ class Creature():
         MATING_THRESHHOLD(float): the % of max energy needed to initiate mating
         is_decayed(bool): indicates if the creature has fully decayed
         DECAY_AMOUNT(float): the energy reduced each turn of decay (not affected by efficiency)
+        EXISTENCE_COST(float): energy reduced each turn while alive just for existing
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
@@ -131,10 +134,10 @@ class Creature():
             
     def __str__(self):
         
-        if self.idTag:
-            return f'Creature<{self.idTag}>'
+        if self.idTag != None:
+            return f'Creature<{self.idTag}:gen{self.generation}>'
         else:
-            return 'Creature'
+            return f'Creature<untagged:gen{self.generation}>'
         
     def move(self, delX, delY):
         """
@@ -188,6 +191,7 @@ class Creature():
     def die(self):
         
         self.is_alive = False
+        logging.info(f'{self.__str__()} has died at {self.location}!')
         
     def get_current_tile(self):
         
@@ -214,6 +218,7 @@ class Creature():
         if self.energy > self.maxenergy:
             self.energy = self.maxenergy
         elif self.energy <= 0:
+            logging.info(f'{self.__str__()} dies an energy death.')
             self.die()
             
     def change_vitality(self, amount):
@@ -222,6 +227,7 @@ class Creature():
         if self.vitality > self.maxvitality:
             self.vitality = self.maxvitality
         elif self.vitality <= 0:
+            logging.info(f'{self.__str__()} dies a vitality death.')
             self.die()
             
     def take_damage(self, amount):
@@ -361,12 +367,25 @@ class Creature():
             if mut_num >= self.MUTATION_CHANCE:
                 offspring.mutate_attribute(key)
                 
+        offspring.bring_stats_in_range()
         offspring.normalize_power_stats() # keep offspring from getting too powerful
         
         self.change_energy(self.MATING_COST)
         target.change_energy(target.MATING_COST)
         
         offspring.generation += 1
+        
+        logging.info(f'!!!!!   Welcome {offspring.__str__()} to the party !!!!!')
+        
+        if offspring.maxenergy <= 0:
+            logging.info(f'Offspring {offspring.__str__()} has no will to live.')
+            offspring.die()
+        if offspring.maxvitality <= 0:
+            logging.info(f'Offspring {offspring.__str__()} is too feeble to live.')
+            offspring.die()       
+        if offspring.speed < 1:
+            logging.info(f'Offspring {offspring.__str__()} is weird and sessile. They die.')
+            offspring.die()
         
         return offspring
     
@@ -384,9 +403,6 @@ class Creature():
         """
         
         potential_mates = self.same_species_at_loc(loc=self.location)
-        for p in potential_mates:
-            print(p.energy, p.receive_mate_threshold(), p)
-        print('\n')
         potential_mates = [l for l in potential_mates
                            if l.energy > l.receive_mate_threshold()]
         return potential_mates
@@ -403,6 +419,7 @@ class Creature():
             target_mate = random.choice(potential_mates)
             self.mate(target_mate)
             did_mate = True
+            logging.info(f'{self.__str__()} and {target_mate.__str__()} have mated.')
         
         return did_mate
         
@@ -433,6 +450,7 @@ class Creature():
                 pass
         else:
             self.inner_turn()
+            self.change_energy(self.EXISTENCE_COST)
             
     def decay(self):
         """
@@ -447,7 +465,7 @@ class Creature():
             self.is_decayed = True
             
     def remove_from_board(self):
-        self.gameboard.creatures.remove(self)
+        self.gameboard.remove_from_board(self)
             
     def same_species_at_loc(self, loc):
         """
@@ -485,17 +503,20 @@ class Herbivore(Creature):
             converted in a single feeding
     """
     
-    def __init__(self, location, gameboard):
+    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
+                 maxvitality=100, attack_power=0, defense=0.5, fertility=0.8,
+                 aggression=0.0, idTag=None):
         super(Herbivore, self).__init__(location=location,
                                         gameboard=gameboard,
-                                        maxenergy=100,
-                                        speed=1,
-                                        efficiency=0,
-                                        maxvitality=100,
-                                        attack_power=0,
-                                        defense=0.5,
-                                        fertility=0.8,
-                                        aggression=0.0)
+                                        maxenergy=maxenergy,
+                                        speed=speed,
+                                        efficiency=efficiency,
+                                        maxvitality=maxvitality,
+                                        attack_power=attack_power,
+                                        defense=defense,
+                                        fertility=fertility,
+                                        aggression=aggression,
+                                        idTag=idTag)
     
     def eat(self):
         """
@@ -517,17 +538,26 @@ class Herbivore(Creature):
         """
         can_act = True
         movement_remaining = self.speed
-        while can_act and movement_remaining >= 1:
+        while can_act:
+            if not self.is_alive:
+                return
+            logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {self.get_current_tile().plant_material} plant.')
             did_mate = False
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
+                logging.info(f'{self.__str__()} is looking for a mate.')
                 can_act = not self.try_to_mate()
             if not did_mate:
                 tile = self.get_current_tile()
-                if tile.plant_material > 0:
+                if tile.plant_material >= self.feed_amount:
+                    logging.info(f'{self.__str__()} eats.')
                     self.eat()
                     can_act = False
                 else:
-                    self.move_randomly()
-                    movement_remaining -= 1
+                    if movement_remaining >= 1:
+                        logging.info(f'{self.__str__()} moves on.')
+                        self.move_randomly()
+                        movement_remaining -= 1
+                    else:
+                        can_act = False
             
             

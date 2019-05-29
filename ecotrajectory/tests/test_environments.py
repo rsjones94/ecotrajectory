@@ -25,6 +25,22 @@ def simple_creature_alt(simple_board):
 
 ### end fixtures ###
 
+def test_Gameboard_add_to_board(simple_board):
+    
+    a = 'test'
+    simple_board.add_to_board(a)
+    assert a in simple_board.creatures
+    
+def test_Gameboard_remove_from_board(simple_board):
+    
+    a = 'test'
+    
+    simple_board.add_to_board(a)
+    simple_board.remove_from_board(a)
+    
+    assert a not in simple_board.creatures
+    assert a in simple_board.removed_creatures
+
 def test_Gameboard_create_landscape():
     
     board = env.Gameboard(boardsize=(4,6), tile=env.Prarie)

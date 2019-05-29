@@ -2,6 +2,8 @@
 Classes to make the "gameboard" that the simulation will run on.
 """
 
+from copy import deepcopy
+
 import numpy as np
 
 
@@ -15,6 +17,8 @@ class Gameboard():
         tile(Environment): an Environment tile that the board will be composed of
         landscape(numpy array of tile): a landscape of tiles covering the gameboard
         creatures(list of Creatures): a list of Creature objects on the board
+        removed_creatures(list of Creatures): a list of Creature objects that have been
+            removed from the board
         """
 
     def __init__(self, boardsize, tile):
@@ -23,11 +27,22 @@ class Gameboard():
         self.tile = tile
         self.landscape = self.create_landscape()
         self.creatures = []
-    
+        self.removed_creatures = []
+        
+    def play(self):
+        """
+        Let everyone take a turn.
+        """
+        for creature in self.creatures.copy():
+            creature.take_turn()
+        for row in self.landscape:
+            for tile in row:
+                tile.plant_grow()
+        
     def create_landscape(self):
         
-        row = [self.tile for l in range(self.boardsize[1])]
-        landscape = [row for l in range(self.boardsize[0])] 
+        row = [deepcopy(self.tile) for l in range(self.boardsize[1])]
+        landscape = [deepcopy(row) for l in range(self.boardsize[0])] 
         return np.array(landscape)
     
     def pos_is_valid(self, pos):
@@ -45,9 +60,16 @@ class Gameboard():
     
     def add_to_board(self, target):
         """
-        Add a creaute to the board
+        Add a creature to the board
         """
         self.creatures.append(target)
+        
+    def remove_from_board(self, target):
+        """
+        Add a creature to the board
+        """
+        self.creatures.remove(target)
+        self.removed_creatures.append(target)
         
     def creatures_at_index(self, index):
         """
@@ -86,6 +108,7 @@ class Tile():
         Alter the plant matter on the Tile
         """
         self.plant_material += amount
+        
         if self.plant_material > self.max_plant_material:
             self.plant_material = self.max_plant_material
         elif self.plant_material < 0:
@@ -99,5 +122,5 @@ class Prarie(Tile):
     """
     
     def __init__(self):
-        super(Prarie, self).__init__(max_plant_material=10, plant_material=5,
-                                     plant_growth_rate=1)
+        super(Prarie, self).__init__(max_plant_material=25, plant_material=10,
+                                     plant_growth_rate=5)

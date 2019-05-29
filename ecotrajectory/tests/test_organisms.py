@@ -47,8 +47,8 @@ def test_Creature_move(simple_creature):
 
 def test_Creature_move_costs_energy(simple_creature):
 
-    simple_creature.move(delX=1, delY=1) # energy starts at 50, this should cost 10
-    assert np.isclose(simple_creature.energy, 40)
+    simple_creature.move(delX=1, delY=1) # energy starts at 50, this should cost 5
+    assert np.isclose(simple_creature.energy, 45)
 
 def test_Creature_overexertion_kills_self(simple_creature):
 
@@ -63,14 +63,14 @@ def test_Creature_die(simple_creature):
 def test_Herbivore_eating_raises_energy(simple_herbivore):
 
     simple_herbivore.eat()
-    assert np.isclose(simple_herbivore.energy, 55)
-    # started at 50, should be 55 (5 plant available on tile, can get up to 10 at a time)
+    assert np.isclose(simple_herbivore.energy, 60)
+    # started at 50, should be 60 (10 plant available on tile, can get up to 10 at a time)
 
 def test_Herbivore_eating_depletes_plant_matter(simple_herbivore):
 
     simple_herbivore.eat()
     plant = simple_herbivore.get_current_tile().plant_material
-    assert plant == 0
+    assert plant == 0 # starts at 10, should get reduced to 0
 
 def test_Creature_attack_hurts_target(simple_board):
     # creature attack power - 10
@@ -267,6 +267,7 @@ def test_Creature_decay_removes_self_from_board(simple_creature):
     simple_creature.decay()
     
     assert simple_creature not in simple_creature.gameboard.creatures
+    assert simple_creature in simple_creature.gameboard.removed_creatures
     
 def test_Creature_decays_once_dead_then_stops(simple_creature):
     
@@ -295,6 +296,16 @@ def test_Creature_same_species_at_loc(simple_board):
     assert b in friends
     assert c in friends
     assert a not in friends
+    
+def test_Creature_reproduce_adds_offspring_to_board_creatures(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='b')
+    
+    c = a.reproduce(b)
+    
+    assert c in simple_board.creatures
+    
 
 def test_Creature_try_to_mate_should_work(simple_board):
     
