@@ -299,8 +299,8 @@ def test_Creature_same_species_at_loc(simple_board):
     
 def test_Creature_reproduce_adds_offspring_to_board_creatures(simple_board):
     
-    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
-    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='b')
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0)
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0)
     
     c = a.reproduce(b)
     
@@ -309,28 +309,28 @@ def test_Creature_reproduce_adds_offspring_to_board_creatures(simple_board):
 
 def test_Creature_try_to_mate_should_work(simple_board):
     
-    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
-    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
-    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5, idTag='c') # mating would not kill
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0)
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0) # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5) # mating would not kill
     
     did_mate = a.try_to_mate()
     assert did_mate == True
     
 def test_Creature_try_to_mate_should_fail(simple_board):
     
-    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
-    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
-    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=10, efficiency=0.5, idTag='c') # mating would not kill
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0)
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0) # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=10, efficiency=0.5) # mating would not kill
     
     did_mate = a.try_to_mate()
     assert did_mate == False
 
 def test_Creature_potential_mates(simple_board):
     
-    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='a')
-    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0, idTag='b') # mating would kill
-    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5, idTag='c') # mating would not kill
-    d = org.Creature(location=(2,3), gameboard=simple_board, maxenergy=200, efficiency=0, idTag='d') # wrong tile
+    a = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=200, efficiency=0)
+    b = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=80, efficiency=0) # mating would kill
+    c = org.Creature(location=(2,2), gameboard=simple_board, maxenergy=60, efficiency=0.5) # mating would not kill
+    d = org.Creature(location=(2,3), gameboard=simple_board, maxenergy=200, efficiency=0) # wrong tile
 
     potential_mates = a.potential_mates()
     

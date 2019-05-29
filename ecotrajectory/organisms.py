@@ -9,6 +9,8 @@ import logging
 
 import numpy as np
 
+from .namegenerator import generate_name
+
 def angle_between_points(ptA, ptB):
     """
     Get the angle in radians between the x-axis and the vector connecting
@@ -96,17 +98,16 @@ class Creature():
             for mating attributes
         MUTATION_CHANCE(float): the probability a mutation will occur for an attribute
             during reproduction
-        idTag(string or int): an optional id tag
-        generation(int): the generation of the Creature
         MATING_THRESHHOLD(float): the % of max energy needed to initiate mating
         is_decayed(bool): indicates if the creature has fully decayed
         DECAY_AMOUNT(float): the energy reduced each turn of decay (not affected by efficiency)
         EXISTENCE_COST(float): energy reduced each turn while alive just for existing
+        name(string): a randomly generated name for the creature
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
                  maxvitality=100, attack_power=10, defense=0.5, fertility=0.8,
-                 aggression=0.25, idTag=None):
+                 aggression=0.25):
         
         self.energy = maxenergy/2
         self.speed = speed
@@ -116,7 +117,6 @@ class Creature():
         self.defense = defense
         self.fertility = fertility
         self.aggression = aggression
-        self.idTag = idTag
         
         self.gameboard = gameboard
         self.location = location
@@ -129,15 +129,16 @@ class Creature():
         
         if self.gameboard is not None:
             self.gameboard.creatures.append(self)
+        
+        self.name = generate_name()
             
-        self.generation = 1
             
     def __str__(self):
         
-        if self.idTag != None:
-            return f'Creature<{self.idTag}:gen{self.generation}>'
+        if self.name != None:
+            return f'Creature<{self.name}>'
         else:
-            return f'Creature<untagged:gen{self.generation}>'
+            return f'Creature<unnamed>'
         
     def move(self, delX, delY):
         """
@@ -359,12 +360,11 @@ class Creature():
                                attack_power=offspring_stats['attack_power'],
                                defense=offspring_stats['defense'],
                                fertility=offspring_stats['fertility'],
-                               aggression=offspring_stats['aggression'],
-                               idTag=self.idTag)
+                               aggression=offspring_stats['aggression'])
         
         for key in offspring.mating_stats(): # randomly mutate attributes
             mut_num = random.uniform(0,1)
-            if mut_num >= self.MUTATION_CHANCE:
+            if mut_num <= self.MUTATION_CHANCE:
                 offspring.mutate_attribute(key)
                 
         offspring.bring_stats_in_range()
@@ -372,8 +372,6 @@ class Creature():
         
         self.change_energy(self.MATING_COST)
         target.change_energy(target.MATING_COST)
-        
-        offspring.generation += 1
         
         logging.info(f'!!!!!   Welcome {offspring.__str__()} to the party !!!!!')
         
@@ -505,7 +503,7 @@ class Herbivore(Creature):
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
                  maxvitality=100, attack_power=0, defense=0.5, fertility=0.8,
-                 aggression=0.0, idTag=None):
+                 aggression=0.0):
         super(Herbivore, self).__init__(location=location,
                                         gameboard=gameboard,
                                         maxenergy=maxenergy,
@@ -515,8 +513,7 @@ class Herbivore(Creature):
                                         attack_power=attack_power,
                                         defense=defense,
                                         fertility=fertility,
-                                        aggression=aggression,
-                                        idTag=idTag)
+                                        aggression=aggression)
     
     def eat(self):
         """
@@ -545,7 +542,8 @@ class Herbivore(Creature):
             did_mate = False
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
                 logging.info(f'{self.__str__()} is looking for a mate.')
-                can_act = not self.try_to_mate()
+                did_mate = self.try_to_mate()
+                can_act = not did_mate
             if not did_mate:
                 tile = self.get_current_tile()
                 if tile.plant_material >= self.feed_amount:
