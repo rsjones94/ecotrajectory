@@ -268,6 +268,15 @@ def test_Creature_decay_removes_self_from_board(simple_creature):
     
     assert simple_creature not in simple_creature.gameboard.creatures
     
+def test_Creature_decays_once_dead_then_stops(simple_creature):
+    
+    simple_creature.is_alive = False
+    simple_creature.energy = 5
+    simple_creature.take_turn()
+    simple_creature.take_turn()
+    
+    assert simple_creature.energy == -5
+    
 def test_remove_from_board(simple_board):
     
     a = org.Creature(location=(2,2), gameboard=simple_board)
@@ -328,4 +337,26 @@ def test_Creature_potential_mates(simple_board):
     assert b in potential_mates
     assert c not in potential_mates
     assert d in potential_mates
+    
+def test_Herbivore_inner_turn(simple_herbivore):
+    """
+    I'm honestly not sure how to test this other than making sure it doesn't
+    throw an error or get stuck in a loop.
+    """
+    simple_herbivore.inner_turn()
+    simple_herbivore.inner_turn()
+    simple_herbivore.inner_turn()
+    simple_herbivore.inner_turn()
+    simple_herbivore.inner_turn()
+    
+def test_Herbivore_take_turn(simple_herbivore):
+    """
+    I'm honestly not sure how to test this other than making sure it doesn't
+    throw an error or get stuck in a loop.
+    """
+    simple_herbivore.take_turn()
+    simple_herbivore.take_turn()
+    simple_herbivore.take_turn()
+    simple_herbivore.die()
+    simple_herbivore.take_turn()
     

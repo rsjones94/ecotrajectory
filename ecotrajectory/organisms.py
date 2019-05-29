@@ -66,6 +66,8 @@ class Creature():
                    'aggression':(0,1)
                   }
     MUTATION_CHANCE = 0.01
+    MATING_THRESHHOLD = 0.75 # the % of max energy needed to initiate mating
+    DECAY_AMOUNT = 10
     
     """
     An animal-esque creature to be placed on a Gameboard.
@@ -94,6 +96,9 @@ class Creature():
             during reproduction
         idTag(string or int): an optional id tag
         generation(int): the generation of the Creature
+        MATING_THRESHHOLD(float): the % of max energy needed to initiate mating
+        is_decayed(bool): indicates if the creature has fully decayed
+        DECAY_AMOUNT(float): the energy reduced each turn of decay (not affected by efficiency)
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
@@ -117,6 +122,7 @@ class Creature():
         self.maxenergy = maxenergy
         self.maxvitality = maxvitality
         self.is_alive = True
+        self.is_decayed = False
         
         if self.gameboard is not None:
             self.gameboard.creatures.append(self)
@@ -196,6 +202,9 @@ class Creature():
         self.change_energy(self.ATTACK_COST)
         
     def change_energy(self, amount):
+        """
+        If the change is negative, apply the efficiency modifer. Otherwise don't
+        """
         
         if amount < 0:
             self.energy += amount*(1-self.efficiency)
@@ -417,8 +426,11 @@ class Creature():
         """
         Do some stuff.
         """
-        if not self.is_alive():
-            self.decay()
+        if not self.is_alive:
+            if not self.is_decayed:
+                self.decay()
+            else:
+                pass
         else:
             self.inner_turn()
             
@@ -429,9 +441,10 @@ class Creature():
         """
         if self.is_alive:
             raise Exception('Creature not dead yet. Cannot decay')
-        self.energy -= 10
+        self.energy -= self.DECAY_AMOUNT
         if self.energy <= 0:
             self.remove_from_board()
+            self.is_decayed = True
             
     def remove_from_board(self):
         self.gameboard.creatures.remove(self)
@@ -502,13 +515,19 @@ class Herbivore(Creature):
         """
         Do stuff
         """
+        can_act = True
         movement_remaining = self.speed
-        while True:
+        while can_act and movement_remaining >= 1:
             did_mate = False
-            if self.energy > 0.75*self.maxenergy:
-                did_mate = self.try_to_mate()
+            if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
+                can_act = not self.try_to_mate()
             if not did_mate:
-                pass
-            # try to find food
+                tile = self.get_current_tile()
+                if tile.plant_material > 0:
+                    self.eat()
+                    can_act = False
+                else:
+                    self.move_randomly()
+                    movement_remaining -= 1
             
             
