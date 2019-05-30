@@ -92,17 +92,14 @@ class Player:
         return creatures
     
     def get_creatures_on_board(self):
-        return self.gameboard.creatures
+        return self.gameboard.creatures.copy()
     
     def get_removed_creatures(self):
-        return self.gameboard.removed_creatures
-    
-    def get_alive_creatures(self):
-        return [c for c in self.get_creatures_on_board() if c.is_alive]
+        return self.gameboard.removed_creatures.copy()
     
     def get_populations(self):
         pop = {cType:[] for cType in self.populations_present()}
-        for creat in self.get_alive_creatures():
+        for creat in self.get_creatures_on_board():
             pop[creat.type].append(creat)
                 
         return pop

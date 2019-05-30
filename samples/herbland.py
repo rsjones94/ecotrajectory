@@ -28,85 +28,9 @@ n_creatures = 3
 
 
 
-sim_start = time.time()
 board = env.Gameboard(boardsize=the_size, tile=env.Prarie())
 
 for i in range(n_creatures):
     a = org.Herbivore(location=(random.randint(loc[0],loc[1]),random.randint(loc[0],loc[1])),
                       gameboard=board)
-     
-turn = []
-alive = []
-dead = []
-avgEnergy = []
-avgSpeed = []
-avgEfficiency = []
-avgFertility = []
-avgAttack = []
-avgDefense = []
-avgVitality = []
 
-start = time.time()
-for i in range(sim_length):
-    logging.info(f'\n--- turn {i} ---\n')
-    board.play()
-    
-    if i%tracker == 0:
-        end = time.time()
-        print(f'Turn {i}. Time between {tracker} turns: {round(end-start,2)}')
-        start = time.time()
-        
-        aliveC = [c for c in board.creatures if c.is_alive]
-        deadC = board.removed_creatures
-        deadC.extend([c for c in board.creatures if not c.is_alive])
-    
-        turn.append(i)
-        alive.append(len(aliveC))
-        dead.append(len(deadC))
-        avgEnergy.append(np.mean([c.maxenergy for c in aliveC]))
-        avgSpeed.append(np.mean([c.speed for c in aliveC]))
-        avgEfficiency.append(np.mean([c.efficiency for c in aliveC]))
-        avgFertility.append(np.mean([c.fertility for c in aliveC]))
-        avgAttack.append(np.mean([c.attack_power for c in aliveC]))
-        avgDefense.append(np.mean([c.defense for c in aliveC]))
-        avgVitality.append(np.mean([c.maxvitality for c in aliveC]))
-        
-sim_end = time.time()
-
-print(f'Simulation finished. Elapsed time: {round(sim_end-sim_start,2)}')
-    
-plt.figure()
-plt.plot(turn,alive)
-plt.title('alive')
-
-plt.figure()
-plt.plot(turn,dead)
-plt.title('dead')
-
-plt.figure()
-plt.plot(turn,avgEnergy)
-plt.title('avgEnergy')
-
-plt.figure()
-plt.plot(turn,avgEfficiency)
-plt.title('avgEfficiency')
-
-plt.figure()
-plt.plot(turn,avgFertility)
-plt.title('avgFertility')
-
-plt.figure()
-plt.plot(turn,avgSpeed)
-plt.title('avgSpeed')
-
-plt.figure()
-plt.plot(turn,avgAttack)
-plt.title('avgAttack')
-
-plt.figure()
-plt.plot(turn,avgDefense)
-plt.title('avgDefense')
-
-plt.figure()
-plt.plot(turn,avgVitality)
-plt.title('avgVitality')

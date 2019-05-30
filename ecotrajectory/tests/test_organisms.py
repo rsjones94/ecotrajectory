@@ -15,6 +15,11 @@ def simple_board():
     return env.Gameboard(boardsize=(10,5), tile=env.Prarie())
 
 @pytest.fixture()
+def wasteland_board():
+
+    return env.Gameboard(boardsize=(10,5), tile=env.Wasteland())
+
+@pytest.fixture()
 def simple_creature(simple_board):
 
     return org.Creature(location=(2,2), gameboard=simple_board)
@@ -267,6 +272,26 @@ def test_remove_from_board(simple_board):
     a.remove_from_board()
     
     assert simple_board.creatures == []
+    
+def test_dying_removes_from_board(simple_board):
+    
+    a = org.Creature(location=(2,2), gameboard=simple_board)
+    assert simple_board.creatures == [a]
+    a.die()
+    assert simple_board.creatures == []
+    
+def test_creature_ambles_and_dies_and_is_removed(wasteland_board):
+    
+    a = org.Herbivore(location=(2,2), gameboard=wasteland_board)
+    assert wasteland_board.creatures == [a]
+    
+    a.take_turn()
+    a.take_turn()
+    a.take_turn()
+    a.take_turn()
+    a.take_turn()
+    assert not a.is_alive
+    assert wasteland_board.creatures == []
     
 def test_Creature_same_species_at_loc(simple_board):
     

@@ -34,6 +34,7 @@ class Gameboard():
         Let everyone take a turn.
         """
         for creature in self.creatures.copy():
+            assert all(c.is_alive for c in self.creatures)
             creature.take_turn()
         for row in self.landscape:
             for tile in row:
@@ -75,7 +76,6 @@ class Gameboard():
         """
         Returns all creatures currently at an index
         """
-        
         return [creature for creature in self.creatures
                 if creature.location == index]
         
@@ -128,7 +128,7 @@ class Prarie(Tile):
 class Forest(Tile):
     
     """
-    A prarie Title.
+    A forest Title.
     """
     
     def __init__(self):
@@ -138,9 +138,19 @@ class Forest(Tile):
 class Desert(Tile):
     
     """
-    A prarie Title.
+    A desert Title.
     """
     
     def __init__(self):
         super(Desert, self).__init__(max_plant_material=10, plant_material=5,
                                      plant_growth_rate=2)
+        
+class Wasteland(Tile):
+    
+    """
+    A wasteland Title.
+    """
+    
+    def __init__(self):
+        super(Wasteland, self).__init__(max_plant_material=0, plant_material=0,
+                                     plant_growth_rate=0)

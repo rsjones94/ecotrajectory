@@ -448,7 +448,6 @@ class Creature:
             pass
         else:
             self.inner_turn()
-            self.change_energy(self.EXISTENCE_COST)
             
     def decay(self):
         """
@@ -534,7 +533,7 @@ class Herbivore(Creature):
         while can_act:
             if not self.is_alive:
                 logging.info(f'{self.__str__()} is dead.')
-                break
+                return
             logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {self.get_current_tile().plant_material} plant.')
             did_mate = False
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
@@ -554,7 +553,8 @@ class Herbivore(Creature):
                         movement_remaining -= 1
                     else:
                         can_act = False
-                        
+        
+        self.change_energy(self.EXISTENCE_COST)
         logging.info(f'{self.__str__()} ends its turn.')
             
             
