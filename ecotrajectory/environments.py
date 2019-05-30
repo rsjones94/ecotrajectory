@@ -123,7 +123,7 @@ class Prarie(Tile):
     
     def __init__(self):
         super(Prarie, self).__init__(max_plant_material=25, plant_material=10,
-                                     plant_growth_rate=5)
+                                     plant_growth_rate=4)
         
 class Forest(Tile):
     

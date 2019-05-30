@@ -13,12 +13,12 @@ import ecotrajectory.player as ply
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland2.log',level=logging.INFO)
+logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland3.log',level=logging.WARNING)
 
 
 
-game = ply.Player(n_herbivores=3, n_predators=0, tile=env.Prarie(), boardsize=(4,4),
-                  turns=50000, record_every=1000)
+game = ply.Player(n_herbivores=3, n_predators=0, tile=env.Prarie(), boardsize=(5,5),
+                  turns=50000, record_every=500)
 
 game.execute()
 

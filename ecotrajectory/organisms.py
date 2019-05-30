@@ -530,12 +530,12 @@ class Herbivore(Creature):
         """
         can_act = True
         movement_remaining = self.speed
+        did_mate = False
         while can_act:
             if not self.is_alive:
                 logging.info(f'{self.__str__()} is dead.')
                 return
             logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {self.get_current_tile().plant_material} plant.')
-            did_mate = False
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
                 logging.info(f'{self.__str__()} is looking for a mate.')
                 did_mate = self.try_to_mate()
@@ -554,7 +554,8 @@ class Herbivore(Creature):
                     else:
                         can_act = False
         
-        self.change_energy(self.EXISTENCE_COST)
+        if self.is_alive:
+            self.change_energy(self.EXISTENCE_COST)
         logging.info(f'{self.__str__()} ends its turn.')
             
             
