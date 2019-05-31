@@ -69,6 +69,15 @@ class Creature:
                    'fertility':(0,1),
                    'aggression':(0,1)
                   }
+    STAT_RANDOM = {'maxenergy':(10,200),
+                   'maxvitality':(0,100),
+                   'attack_power':(5,50), 
+                   'defense':(0,0.8),
+                   'efficiency':(0,0.8),
+                   'speed':(1,5),
+                   'fertility':(.1,1),
+                   'aggression':(0,1)
+                  }
     MUTATION_CHANCE = 0.005
     MATING_THRESHHOLD = 0.75 # the % of max energy needed to initiate mating
     DECAY_AMOUNT = 10
@@ -104,7 +113,8 @@ class Creature:
         DECAY_AMOUNT(float): the energy reduced each turn of decay (not affected by efficiency)
         EXISTENCE_COST(float): energy reduced each turn while alive just for existing
         name(string): a randomly generated name for the creature
-        type(string): the type of creature object the instance is
+        creature_type(string): the type of creature object the instance is
+        STAT_RANDOM(dict of tuples of float): min and max values used for random stat generation
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0.5,
@@ -242,11 +252,19 @@ class Creature:
         """
         Returns a list of stats that can are used for mating
         """
-        
         stats = self.power_stats()
         stats.append('aggression')
         
         return stats
+    
+    def randomize_stats(self):
+        """
+        Randomizes all mating stats.
+        """
+        for stat in self.mating_stats():
+            minVal = self.STAT_RANDOM[stat][0]
+            maxVal = self.STAT_RANDOM[stat][1]
+            setattr(self,stat,random.uniform(minVal,maxVal))
         
     def power_stats(self):
         """
@@ -446,6 +464,7 @@ class Creature:
         """
         if not self.is_alive:
             pass
+            # this if block is meant for decay processes
         else:
             self.inner_turn()
             
@@ -543,5 +562,42 @@ class Herbivore(Creature):
         if self.is_alive:
             self.change_energy(self.EXISTENCE_COST)
         logging.info(f'{self.__str__()} ends its turn.')
+        
+class Predator(Creature):
+    
+    creature_type = 'predator'
+    min_predation_energy = 10
+    
+    """
+    Where's the meat?
+    
+    Attributes:
+        min_predation_energy(float): the minimum guaranteed energy from eating prey
+    """
+    
+    def consume(self, target):
+        """
+        Eat love prey. Add the amount of their remaining energy to yours
+        at a 1:1 ratio if target has at least the minimum predation energy.
+        Otherwise get the minimum predation energy.
+        """
+        adder = max(self.min_predation_energy,target.energy)
+        self.change_energy(adder)
+        
+    def attack(self, target):
+        pass
+    
+    def inner_turn(self):
+        """
+        Do stuff
+        """
+        pass
+    
+    
+    
+    
+    
+    
+
             
             

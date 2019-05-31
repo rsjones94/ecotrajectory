@@ -27,6 +27,7 @@ class Player:
             a = org.Herbivore(location=(random.randint(boardsize[0]-1,boardsize[1]-1),
                                         random.randint(boardsize[0]-1,boardsize[1]-1)),
                               gameboard=self.gameboard)
+            a.randomize_stats()
     
         for i in range(n_predators):
             pass

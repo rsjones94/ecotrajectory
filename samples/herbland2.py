@@ -17,8 +17,8 @@ logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland3.log',level=l
 
 
 
-game = ply.Player(n_herbivores=3, n_predators=0, tile=env.Prarie(), boardsize=(5,5),
-                  turns=25000, record_every=500)
+game = ply.Player(n_herbivores=10, n_predators=0, tile=env.Forest(), boardsize=(5,5),
+                  turns=10000, record_every=100)
 
 game.execute()
 

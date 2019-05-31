@@ -380,3 +380,16 @@ def test_Herbivore_take_turn(simple_herbivore):
     simple_herbivore.die()
     simple_herbivore.take_turn()
     
+def test_Creature_randomize_stats(simple_creature):
+    
+    for i in range(10):
+        simple_creature.randomize_stats()
+        
+        for stat in simple_creature.mating_stats():
+            assert simple_creature.STAT_RANDOM[stat][0] <= getattr(simple_creature,stat) <= simple_creature.STAT_RANDOM[stat][1]
+        
+        
+        
+        
+    
+    
