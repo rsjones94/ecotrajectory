@@ -82,13 +82,15 @@ class Creature:
     MATING_THRESHHOLD = 0.75 # the % of max energy needed to initiate mating
     DECAY_AMOUNT = 10
     creature_type= 'creature'
+    RESTING_THRESHOLD = 0.75
     
     """
     An animal-esque creature to be placed on a Gameboard.
     
     Attributes:
         energy(float): the energy the creature has for tasks
-        speed(int): the number of movements a creature gets per turn
+        speed(int): the number of movements a creature gets per turn.
+            Also used to calculate chance of getting away from an aggressor
         efficiency(float): energy costs will multiplied by 1-efficiency
         vitality(float): the health of the creature
         attack_power(float): the power of the creature's attacks
@@ -115,6 +117,7 @@ class Creature:
         name(string): a randomly generated name for the creature
         creature_type(string): the type of creature object the instance is
         STAT_RANDOM(dict of tuples of float): min and max values used for random stat generation
+        RESTING_THRESHOLD(float): % of vitality you should below which the creature may want to recover
     """
     
     def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0.5,
@@ -148,7 +151,7 @@ class Creature:
     def __str__(self):
         
         if self.name != None:
-            return f'Creature<{self.name}>'
+            return f'Creature<{self.name}[{self.creature_type}]>'
         else:
             return f'Creature<unnamed>'
         
@@ -216,7 +219,8 @@ class Creature:
         """
         Give the target (a Creature object) a whack.
         """
-        target.take_damage(self.attack_power)
+        damage_dealt = random.uniform(0.25*self.attack_power, 2*self.attack_power)
+        target.take_damage(damage_dealt)
         self.change_energy(self.ATTACK_COST)
         
     def change_energy(self, amount):
@@ -245,7 +249,7 @@ class Creature:
             self.die()
             
     def take_damage(self, amount):
-        
+        logging.info(f'{self.__str__()} ({round(self.energy,1)}E/{round(self.vitality,1)}V) takes {amount} damage.')
         self.change_vitality(-amount*(1-self.defense))
         
     def mating_stats(self):
@@ -265,6 +269,9 @@ class Creature:
             minVal = self.STAT_RANDOM[stat][0]
             maxVal = self.STAT_RANDOM[stat][1]
             setattr(self,stat,random.uniform(minVal,maxVal))
+            
+            self.energy = self.maxenergy/2
+            self.vitality = self.maxvitality
         
     def power_stats(self):
         """
@@ -444,7 +451,7 @@ class Creature:
         
     def rest(self):
         
-        self.vitality += self.maxvitality/8
+        self.vitality += self.maxvitality/4
         
     def eat(self):
         """
@@ -480,13 +487,21 @@ class Creature:
             
     def same_species_at_loc(self, loc):
         """
-        Get a list of Creatures of the same species/type on the current tile
+        Get a list of Creatures of the same species/type on a tile
         excluding self
         """
         all_creatures = self.gameboard.creatures_at_index(loc)
         friends = [l for l in all_creatures if l.creature_type == self.creature_type]
         friends.remove(self)
         return(friends)
+        
+    def other_species_at_loc(self, loc):
+        """
+        Get a list of Creatures of different species/type on a tile
+        """
+        all_creatures = self.gameboard.creatures_at_index(loc)
+        foes = [l for l in all_creatures if l.creature_type != self.creature_type]
+        return(foes)
         
     def seek_mate_threshold(self):
         """
@@ -501,6 +516,36 @@ class Creature:
         without dying)
         """
         return abs(self.MATING_COST*(1-self.efficiency))
+    
+    def wants_to_fight(self):
+        if random.uniform(0,1) <= self.aggression:    
+            logging.info(f'{self.__str__()} wants to fight!')
+            return True
+        return False
+    
+    def gets_away(self, aggressor):
+        aggressor_roll = random.uniform(0,aggressor.speed)
+        self_roll = random.uniform(0,self.speed)
+    
+        if self_roll > aggressor_roll:
+            self.move_randomly
+            logging.info(f'{self.__str__()} gets away.')
+            return True
+        
+        logging.info(f'{self.__str__()} is run down.')
+        return False
+    
+    def fight(self, target):
+        while self.is_alive and target.is_alive:
+            """
+            Death can be due to overexertion or vitality drain.
+            """
+            logging.info(f'{self.__str__()} and {target.__str__()} are fighting.')
+            if self.is_alive and target.is_alive:
+                self.attack(target)
+            if target.is_alive and self.is_alive:
+                target.attack(self)
+            
     
 class Herbivore(Creature):
     
@@ -536,17 +581,17 @@ class Herbivore(Creature):
         can_act = True
         movement_remaining = self.speed
         did_mate = False
+        tile = self.get_current_tile()
         while can_act:
             if not self.is_alive:
                 logging.info(f'{self.__str__()} is dead.')
                 return
-            logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {self.get_current_tile().plant_material} plant.')
+            logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {tile.plant_material} plant.')
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
                 logging.info(f'{self.__str__()} is looking for a mate.')
                 did_mate = self.try_to_mate()
                 can_act = not did_mate
             if not did_mate:
-                tile = self.get_current_tile()
                 if tile.plant_material >= self.feed_amount:
                     logging.info(f'{self.__str__()} eats.')
                     self.eat()
@@ -563,16 +608,19 @@ class Herbivore(Creature):
             self.change_energy(self.EXISTENCE_COST)
         logging.info(f'{self.__str__()} ends its turn.')
         
+        
 class Predator(Creature):
     
     creature_type = 'predator'
     min_predation_energy = 10
+    EATING_THRESHOLD = 0.75
     
     """
     Where's the meat?
     
     Attributes:
         min_predation_energy(float): the minimum guaranteed energy from eating prey
+        EATING_THRESHOLD(float): the % of energy above which the Predator won't hunt
     """
     
     def consume(self, target):
@@ -581,17 +629,64 @@ class Predator(Creature):
         at a 1:1 ratio if target has at least the minimum predation energy.
         Otherwise get the minimum predation energy.
         """
+        logging.info(f'{self.__str__()} eats {target.__str__()}.')
         adder = max(self.min_predation_energy,target.energy)
         self.change_energy(adder)
         
-    def attack(self, target):
-        pass
+    def try_to_eat(self, target):
+        logging.info(f'{self.__str__()} wants to eat {target.__str__()}.')
+        if target.wants_to_fight():
+            self.fight(target)
+        else:
+            if target.gets_away(self):
+                return
+            else:
+                self.fight(target)
+        
+        if self.is_alive:
+            self.consume(target)
     
     def inner_turn(self):
         """
         Do stuff
         """
-        pass
+        can_act = True
+        movement_remaining = self.speed
+        did_mate = False
+        while can_act:
+            if not self.is_alive:
+                logging.info(f'{self.__str__()} is dead.')
+                return
+            logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {len(self.other_species_at_loc(self.location))} herbivores.')
+            if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
+                logging.info(f'{self.__str__()} is looking for a mate.')
+                did_mate = self.try_to_mate()
+                can_act = not did_mate
+            if not did_mate:
+                targets = self.other_species_at_loc(self.location)
+                if self.energy > self.maxenergy*self.EATING_THRESHOLD:
+                    logging.info(f'{self.__str__()} is too full to hunt.')
+                    can_act = False
+                elif len(targets) > 0:
+                    target = random.choice(targets)
+                    self.try_to_eat(target)
+                    can_act = False
+                else:
+                    if movement_remaining >= 1:
+                        if self.vitality < self.maxvitality*self.RESTING_THRESHOLD:
+                            logging.info(f'{self.__str__()} rests.')
+                            self.rest()
+                            can_act = False
+                        else:
+                            logging.info(f'{self.__str__()} moves on.')
+                            self.move_randomly()
+                            movement_remaining -= 1
+                    else:
+                        can_act = False
+        
+        if self.is_alive:
+            self.change_energy(self.EXISTENCE_COST)
+        logging.info(f'{self.__str__()} ends its turn.')
     
     
     

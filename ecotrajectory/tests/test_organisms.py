@@ -80,13 +80,13 @@ def test_Herbivore_eating_depletes_plant_matter(simple_herbivore):
 def test_Creature_attack_hurts_target(simple_board):
     # creature attack power - 25
     # creature defense - 0.5
-    # damage should be 25*0.5 == 12.5
+    # damage should be 25*0.5*0.5 at least
     # creature inital vitality is 100
     creat1 = org.Creature(location=(2,2), gameboard=simple_board)
     creat2 = org.Creature(location=(2,2), gameboard=simple_board)
     creat1.attack(creat2)
 
-    assert np.isclose(creat2.vitality, 100-12.5)
+    assert creat2.vitality <= 100-(25*0.5*0.5)
 
 def test_Creature_attack_drains_own_energy(simple_board):
     # creature initial energy is 50
@@ -96,18 +96,6 @@ def test_Creature_attack_drains_own_energy(simple_board):
     creat1.attack(creat2)
 
     assert np.isclose(creat1.energy, 47.5)
-
-def test_Creature_deathblow_kills_target(simple_board):
-    # creature initial energy is vitality is 100
-    # two attacks of power 100, with target defense 0.5 (50% damage reduction)
-    # should kill
-    creat1 = org.Creature(location=(2,2), gameboard=simple_board)
-    creat2 = org.Creature(location=(2,2), gameboard=simple_board)
-    creat1.attack_power = 100
-    creat1.attack(creat2)
-    assert creat2.is_alive == True
-    creat1.attack(creat2)
-    assert creat2.is_alive == False
 
 def test_Creature_get_vals():
 
@@ -388,8 +376,19 @@ def test_Creature_randomize_stats(simple_creature):
         for stat in simple_creature.mating_stats():
             assert simple_creature.STAT_RANDOM[stat][0] <= getattr(simple_creature,stat) <= simple_creature.STAT_RANDOM[stat][1]
         
-        
-        
+def test_Creature_identifies_strange_species(simple_board):
+    
+    p1 = org.Predator(location=(1,1), gameboard=simple_board)
+    p2 = org.Predator(location=(1,1), gameboard=simple_board)
+    h1 = org.Herbivore(location=(1,1), gameboard=simple_board)
+    h2 = org.Herbivore(location=(1,1), gameboard=simple_board)
+    
+    targets = p1.other_species_at_loc((1,1))
+    
+    assert h1 in targets
+    assert h2 in targets
+    assert p2 not in targets
+    assert len(targets) == 2
         
     
     

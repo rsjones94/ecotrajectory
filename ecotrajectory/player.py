@@ -5,6 +5,7 @@ A Player class that you can configure to play the game.
 import logging
 import time
 import random
+from copy import deepcopy
 
 import numpy as np
 
@@ -30,7 +31,10 @@ class Player:
             a.randomize_stats()
     
         for i in range(n_predators):
-            pass
+            a = org.Predator(location=(random.randint(boardsize[0]-1,boardsize[1]-1),
+                                        random.randint(boardsize[0]-1,boardsize[1]-1)),
+                              gameboard=self.gameboard)
+            a.randomize_stats()
         
         self.initialize_statistics_dictionary()
     
@@ -51,7 +55,6 @@ class Player:
         print(f'Simulation finished. Total time elapsed: {round(end-start,2)}')
             
     def initialize_statistics_dictionary(self):
-        empty_statdict = {cType:[] for cType in self.populations_present()}
         subdict = {'maxenergy':[],
                    'maxvitality':[],
                    'speed':[],
@@ -61,9 +64,7 @@ class Player:
                    'defense':[],
                    'alive':[]}
         
-        for cType in empty_statdict:
-            empty_statdict[cType] = subdict
-            
+        empty_statdict = {cType:deepcopy(subdict) for cType in self.populations_present()}
         empty_statdict['turn'] = []
         self.statdict = empty_statdict
             
