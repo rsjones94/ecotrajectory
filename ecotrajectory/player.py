@@ -67,7 +67,7 @@ class Player:
         self.statdict = empty_statdict
             
     def populations_present(self):
-        pop = {c.type for c in self.all_creatures()} # set comprehension, not dictionary
+        pop = {c.creature_type for c in self.all_creatures()} # set comprehension, not dictionary
         return pop
     
     def record_statistics(self, turn):
@@ -100,7 +100,7 @@ class Player:
     def get_populations(self):
         pop = {cType:[] for cType in self.populations_present()}
         for creat in self.get_creatures_on_board():
-            pop[creat.type].append(creat)
+            pop[creat.creature_type].append(creat)
                 
         return pop
     

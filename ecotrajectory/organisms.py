@@ -72,6 +72,7 @@ class Creature:
     MUTATION_CHANCE = 0.005
     MATING_THRESHHOLD = 0.75 # the % of max energy needed to initiate mating
     DECAY_AMOUNT = 10
+    creature_type= 'creature'
     
     """
     An animal-esque creature to be placed on a Gameboard.
@@ -106,8 +107,8 @@ class Creature:
         type(string): the type of creature object the instance is
     """
     
-    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
-                 maxvitality=100, attack_power=10, defense=0.5, fertility=0.8,
+    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0.5,
+                 maxvitality=100, attack_power=25, defense=0.5, fertility=0.5,
                  aggression=0.25):
         
         self.energy = maxenergy/2
@@ -132,7 +133,6 @@ class Creature:
             self.gameboard.creatures.append(self)
         
         self.name = generate_name()
-        self.type = 'creature'
             
             
     def __str__(self):
@@ -465,7 +465,7 @@ class Creature:
         excluding self
         """
         all_creatures = self.gameboard.creatures_at_index(loc)
-        friends = [l for l in all_creatures if l.type == self.type]
+        friends = [l for l in all_creatures if l.creature_type == self.creature_type]
         friends.remove(self)
         return(friends)
         
@@ -486,6 +486,7 @@ class Creature:
 class Herbivore(Creature):
     
     feed_amount = 10
+    creature_type = 'herbivore'
     
     """
     They just like eatin' plants.
@@ -494,21 +495,6 @@ class Herbivore(Creature):
         feed_amount(float): the amount of plant material/energy that can be
             converted in a single feeding
     """
-    
-    def __init__(self, location, gameboard, maxenergy=100, speed=1, efficiency=0,
-                 maxvitality=100, attack_power=0, defense=0.5, fertility=0.8,
-                 aggression=0.0):
-        super(Herbivore, self).__init__(location=location,
-                                        gameboard=gameboard,
-                                        maxenergy=maxenergy,
-                                        speed=speed,
-                                        efficiency=efficiency,
-                                        maxvitality=maxvitality,
-                                        attack_power=attack_power,
-                                        defense=defense,
-                                        fertility=fertility,
-                                        aggression=aggression)
-        self.type = 'herbivore'
     
     def eat(self):
         """

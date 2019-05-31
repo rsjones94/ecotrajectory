@@ -53,11 +53,11 @@ def test_Creature_move(simple_creature):
 def test_Creature_move_costs_energy(simple_creature):
 
     simple_creature.move(delX=1, delY=1) # energy starts at 50, this should cost 5
-    assert np.isclose(simple_creature.energy, 45)
+    assert np.isclose(simple_creature.energy, 47.5)
 
 def test_Creature_overexertion_kills_self(simple_creature):
 
-    simple_creature.change_energy(-55) # energy starts at 50
+    simple_creature.change_energy(-100) # energy starts at 50, efficiency is 0.5
     assert simple_creature.is_alive == False
 
 def test_Creature_die(simple_creature):
@@ -78,15 +78,15 @@ def test_Herbivore_eating_depletes_plant_matter(simple_herbivore):
     assert plant == 0 # starts at 10, should get reduced to 0
 
 def test_Creature_attack_hurts_target(simple_board):
-    # creature attack power - 10
+    # creature attack power - 25
     # creature defense - 0.5
-    # damage should be 10*0.5 == 5
+    # damage should be 25*0.5 == 12.5
     # creature inital vitality is 100
     creat1 = org.Creature(location=(2,2), gameboard=simple_board)
     creat2 = org.Creature(location=(2,2), gameboard=simple_board)
     creat1.attack(creat2)
 
-    assert np.isclose(creat2.vitality, 95)
+    assert np.isclose(creat2.vitality, 100-12.5)
 
 def test_Creature_attack_drains_own_energy(simple_board):
     # creature initial energy is 50
@@ -95,7 +95,7 @@ def test_Creature_attack_drains_own_energy(simple_board):
     creat2 = org.Creature(location=(2,2), gameboard=simple_board)
     creat1.attack(creat2)
 
-    assert np.isclose(creat1.energy, 45)
+    assert np.isclose(creat1.energy, 47.5)
 
 def test_Creature_deathblow_kills_target(simple_board):
     # creature initial energy is vitality is 100
@@ -112,14 +112,14 @@ def test_Creature_deathblow_kills_target(simple_board):
 def test_Creature_get_vals():
 
     creat = org.Creature(location=None, gameboard=None)
-    expected = [100, 100, 10, 0.5, 0, 1, 0.8]
+    expected = [100, 100, 25, 0.5, 0.5, 1, 0.5]
 
     assert creat.get_vals(creat.power_stats()) == expected
 
 def test_Creature_power_score():
 
     creat = org.Creature(location=None, gameboard=None)
-    expected = (3.833333333333334, 0.5476190476190477)
+    expected = (4.833333333333333, 0.6904761904761905)
 
     assert np.allclose(creat.power_score(), expected)
 
@@ -199,11 +199,11 @@ def test_Creature_combine_vals(simple_creature, simple_creature_alt):
     
     expected = {'maxenergy': 100,
                 'maxvitality': 100,
-                'attack_power': 15,
+                'attack_power': 22.5,
                 'defense': 0.5,
-                'efficiency': 0,
+                'efficiency': 0.5,
                 'speed': 2,
-                'fertility': 0.8,
+                'fertility': 0.5,
                 'aggression': 0.5}
     
     assert simple_creature.combine_vals(simple_creature_alt) == expected
@@ -283,6 +283,7 @@ def test_dying_removes_from_board(simple_board):
 def test_creature_ambles_and_dies_and_is_removed(wasteland_board):
     
     a = org.Herbivore(location=(2,2), gameboard=wasteland_board)
+    a.efficiency = 0
     assert wasteland_board.creatures == [a]
     
     a.take_turn()
