@@ -44,12 +44,16 @@ class Player:
         """
         start = time.time()
         middle = time.time()
+        initial_populations = self.populations_present()
         for i in range(0,self.turns+1):
             logging.info(f'---------- TURN {i} ----------')
             if i%self.record_every == 0:
                 self.record_statistics(i)
                 print(f'On turn {i}. nTime: {round(time.time()-middle,2)}')
                 middle = time.time()
+                if initial_populations != self.populations_alive():
+                    print(f'!!!!! EXTINCTION !!!!!')
+                    break
             self.gameboard.play()
         end = time.time()
         print(f'Simulation finished. Total time elapsed: {round(end-start,2)}')
@@ -70,6 +74,10 @@ class Player:
             
     def populations_present(self):
         pop = {c.creature_type for c in self.all_creatures()} # set comprehension, not dictionary
+        return pop
+    
+    def populations_alive(self):
+        pop = {c.creature_type for c in self.get_creatures_on_board()} # set comprehension, not dictionary
         return pop
     
     def record_statistics(self, turn):

@@ -80,13 +80,13 @@ def test_Herbivore_eating_depletes_plant_matter(simple_herbivore):
 def test_Creature_attack_hurts_target(simple_board):
     # creature attack power - 25
     # creature defense - 0.5
-    # damage should be 25*0.5*0.5 at least
+    # damage should be 25*0.5*0.25 at least
     # creature inital vitality is 100
     creat1 = org.Creature(location=(2,2), gameboard=simple_board)
     creat2 = org.Creature(location=(2,2), gameboard=simple_board)
     creat1.attack(creat2)
 
-    assert creat2.vitality <= 100-(25*0.5*0.5)
+    assert creat2.vitality <= 100-(25*0.5*0.25)
 
 def test_Creature_attack_drains_own_energy(simple_board):
     # creature initial energy is 50
@@ -389,6 +389,18 @@ def test_Creature_identifies_strange_species(simple_board):
     assert h2 in targets
     assert p2 not in targets
     assert len(targets) == 2
+    
+def test_Creature_closest_friend(simple_board):
+    
+    p1 = org.Predator(location=(1,1), gameboard=simple_board)
+    p2 = org.Predator(location=(1,2), gameboard=simple_board)
+    p3 = org.Predator(location=(2,2), gameboard=simple_board)
+    h1 = org.Herbivore(location=(1,2), gameboard=simple_board)
+    h2 = org.Herbivore(location=(1,1), gameboard=simple_board)
+    
+    target= p1.closest_friend()
+    
+    assert target is p2
         
     
     

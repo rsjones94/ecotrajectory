@@ -451,7 +451,7 @@ class Creature:
         
     def rest(self):
         
-        self.vitality += self.maxvitality/4
+        self.vitality += self.maxvitality/8
         
     def eat(self):
         """
@@ -484,6 +484,15 @@ class Creature:
             
     def remove_from_board(self):
         self.gameboard.remove_from_board(self)
+        
+    def same_species_on_board(self):
+        creats = [c for c in self.gameboard.creatures if c.creature_type == self.creature_type]
+        creats.remove(self)
+        return creats
+    
+    def other_species_on_board(self):
+        creats = [c for c in self.gameboard.creatures if c.creature_type != self.creature_type]
+        return creats
             
     def same_species_at_loc(self, loc):
         """
@@ -545,12 +554,24 @@ class Creature:
                 self.attack(target)
             if target.is_alive and self.is_alive:
                 target.attack(self)
+                
+    def closest_friend(self):
+        """
+        Returns the closest Creature with the same creature_type.
+        """
+        friends = self.same_species_on_board()
+        if friends == []:
+            return None
+        def distance(p1,p2): return ((p2[0]-p1[0])**2+(p2[1]-p1[1])**2)**0.5
+        dists = [distance(self.location,c.location) for c in friends]
+        return friends[np.argmin(dists)]
             
     
 class Herbivore(Creature):
     
     feed_amount = 10
     creature_type = 'herbivore'
+    MUTATION_CHANCE = 0.01
     
     """
     They just like eatin' plants.
@@ -612,8 +633,10 @@ class Herbivore(Creature):
 class Predator(Creature):
     
     creature_type = 'predator'
-    min_predation_energy = 10
-    EATING_THRESHOLD = 0.75
+    min_predation_energy = 20
+    EATING_THRESHOLD = 0.25
+    MAITNG_THRESHOLD = 0.9
+    MATING_COST = -60 # we are trying to bump the population numbers up
     
     """
     Where's the meat?
@@ -625,12 +648,12 @@ class Predator(Creature):
     
     def consume(self, target):
         """
-        Eat love prey. Add the amount of their remaining energy to yours
+        Eat prey love. Add their max energy to your energy
         at a 1:1 ratio if target has at least the minimum predation energy.
         Otherwise get the minimum predation energy.
         """
         logging.info(f'{self.__str__()} eats {target.__str__()}.')
-        adder = max(self.min_predation_energy,target.energy)
+        adder = max(self.min_predation_energy,target.maxenergy)
         self.change_energy(adder)
         
     def try_to_eat(self, target):
@@ -656,12 +679,27 @@ class Predator(Creature):
         while can_act:
             if not self.is_alive:
                 logging.info(f'{self.__str__()} is dead.')
-                return
+                break
             logging.info(f'{self.__str__()} pos: {self.location}. Energy: {self.energy}, Movement: {movement_remaining}. Tile has {len(self.other_species_at_loc(self.location))} herbivores.')
             if self.energy > self.MATING_THRESHHOLD*self.maxenergy:
                 logging.info(f'{self.__str__()} is looking for a mate.')
                 did_mate = self.try_to_mate()
                 can_act = not did_mate
+                if not did_mate:
+                    try:
+                        target_location = self.closest_friend().location
+                        logging.info(f'{self.__str__()} is going to {target_location} location looking for a mate.')
+                        while self.location != target_location and movement_remaining >= 1:
+                            self.move_toward(target_location)
+                            movement_remaining -= 1
+                        if self.location == target_location:
+                            logging.info(f'{self.__str__()} made it to {target_location}.')
+                            did_mate = self.try_to_mate()
+                            can_act = not did_mate
+                        else:
+                            logging.info(f'{self.__str__()} did not make it to {target_location}; loc: {self.location}')
+                    except AttributeError:
+                        logging.info(f'{self.__str__()} is alone in this world.')
             if not did_mate:
                 targets = self.other_species_at_loc(self.location)
                 if self.energy > self.maxenergy*self.EATING_THRESHOLD:
@@ -687,6 +725,10 @@ class Predator(Creature):
         if self.is_alive:
             self.change_energy(self.EXISTENCE_COST)
         logging.info(f'{self.__str__()} ends its turn.')
+        
+    def reproduce(self,target):
+        super(Predator,self).reproduce(target)
+        #super(Predator,self).reproduce(target)
     
     
     
