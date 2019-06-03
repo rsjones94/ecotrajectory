@@ -13,17 +13,24 @@ import ecotrajectory.player as ply
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland30.log',level=logging.INFO)
+logging.basicConfig(filename=r'C:\Users\rsjon_000\Desktop\herbland30.log',level=logging.WARNING)
 
 
-
+"""
 game = ply.Player(n_herbivores=100, n_predators=15, tile=env.Prarie(), boardsize=(30,30),
                   turns=10000, record_every=1)
+"""
 
+game = ply.Player(n_herbivores=10, n_predators=0, tile=env.Prarie(), boardsize=(4,4),
+                  turns=25000, record_every=100)
 game.execute()
 
+al = [len(l) for l in game.recorder['alive']]
+de = [len(l) for l in game.recorder['dead']]
+plt.plot(al)
+plt.plot(de)
 
-
+"""
 turns = game.statdict['turn']
 
 for key in game.statdict['herbivore']:
@@ -35,3 +42,4 @@ for key in game.statdict['herbivore']:
         pass
     plt.title(key)
     plt.legend()
+"""

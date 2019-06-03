@@ -402,5 +402,11 @@ def test_Creature_closest_friend(simple_board):
     
     assert target is p2
         
+def test_adding_pointer_to_Creature_does_not_create_new(simple_board):
+    
+    c1 = org.Predator(location=(1,1), gameboard=simple_board)
+    pointer_c1 = c1
+    
+    assert len(simple_board.creatures) == 1
     
     
